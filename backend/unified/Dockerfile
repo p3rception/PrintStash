@@ -14,8 +14,10 @@ COPY --chmod=0644 nginx.conf /app/nginx.conf
 COPY --chmod=0755 run.sh /app/unified-run.sh
 
 # Source files can arrive from a checkout with umask 077. The API's COPY owns
-# them as UID 10001; arbitrary PUID/PGID must also be able to read that code.
-RUN chmod -R a+rX /app/app /app/alembic
+# them as UID 10001; arbitrary PUID/PGID must also be able to read that code,
+# and nginx (running as PUID) the frontend files copied in above.
+RUN chmod -R a+rX /app/app /app/alembic /app/nginx-server.template \
+    /etc/nginx/security-headers.conf /usr/share/nginx/html
 
 ENV NGINX_CLIENT_MAX_BODY_SIZE=528m
 EXPOSE 3000
