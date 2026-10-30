@@ -446,6 +446,11 @@ class PrintJob(SQLModel, table=True):
     # without a live Spoolman call at the finishing tick.
     spool_filament_id: Optional[int] = Field(default=None, index=True)
 
+    # Who the print is for ("me", a family member...). Free text by design:
+    # the people are not PrintStash users, and the UI offers known names.
+    recipient: Optional[str] = Field(default=None, max_length=64, index=True)
+    notes: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+
     deleted_at: Optional[datetime] = Field(default=None, index=True)
     deleted_by: Optional[int] = Field(default=None, foreign_key="users.id")
     created_by: Optional[int] = Field(default=None, foreign_key="users.id")

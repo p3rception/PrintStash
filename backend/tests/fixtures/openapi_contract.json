@@ -9191,6 +9191,18 @@
             ],
             "title": "Finished At"
           },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 4096,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
           "printer_id": {
             "anyOf": [
               {
@@ -9213,6 +9225,18 @@
               }
             ],
             "title": "Printer Name"
+          },
+          "recipient": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipient"
           },
           "spool_filament_id": {
             "anyOf": [
@@ -11318,6 +11342,17 @@
           "metadata": {
             "$ref": "#/components/schemas/PrintJobReportedMetadataRead"
           },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
           "printer_id": {
             "anyOf": [
               {
@@ -11332,6 +11367,17 @@
           "printer_name": {
             "title": "Printer Name",
             "type": "string"
+          },
+          "recipient": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipient"
           },
           "remote_filename": {
             "title": "Remote Filename",
@@ -14464,6 +14510,38 @@
         "title": "PrintBatchRead",
         "type": "object"
       },
+      "PrintJobAnnotation": {
+        "additionalProperties": false,
+        "description": "Who a logged print was for and free notes; omitted fields are kept.",
+        "properties": {
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 4096,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "recipient": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipient"
+          }
+        },
+        "title": "PrintJobAnnotation",
+        "type": "object"
+      },
       "PrintJobIdentityRead": {
         "description": "Identity reported by a printer; absent values stay absent.",
         "properties": {
@@ -14550,6 +14628,17 @@
       },
       "PrintJobRead": {
         "properties": {
+          "actual_duration_s": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Duration S"
+          },
           "artifact_capture_error": {
             "anyOf": [
               {
@@ -14779,6 +14868,17 @@
             ],
             "title": "External Total Layers"
           },
+          "filament_used_g": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filament Used G"
+          },
           "file_id": {
             "title": "File Id",
             "type": "integer"
@@ -14831,6 +14931,17 @@
           "model_id": {
             "title": "Model Id",
             "type": "integer"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
           },
           "operator_decided_at": {
             "anyOf": [
@@ -14893,6 +15004,17 @@
             "default": 0,
             "title": "Queue Position",
             "type": "integer"
+          },
+          "recipient": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipient"
           },
           "remote_filename": {
             "title": "Remote Filename",
@@ -15565,6 +15687,42 @@
             ],
             "title": "Elegoo Centauri Mainboard Id"
           },
+          "flashforge_check_code": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flashforge Check Code"
+          },
+          "flashforge_host": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flashforge Host"
+          },
+          "flashforge_serial": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flashforge Serial"
+          },
           "group": {
             "anyOf": [
               {
@@ -16223,7 +16381,8 @@
           "bambu_lan",
           "prusalink",
           "elegoo_centauri",
-          "octoprint"
+          "octoprint",
+          "flashforge"
         ],
         "title": "PrinterProvider",
         "type": "string"
@@ -16334,6 +16493,28 @@
             ],
             "title": "Elegoo Centauri Mainboard Id"
           },
+          "flashforge_host": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flashforge Host"
+          },
+          "flashforge_serial": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flashforge Serial"
+          },
           "group": {
             "anyOf": [
               {
@@ -16357,6 +16538,11 @@
           "has_elegoo_centauri_access_code": {
             "default": false,
             "title": "Has Elegoo Centauri Access Code",
+            "type": "boolean"
+          },
+          "has_flashforge_check_code": {
+            "default": false,
+            "title": "Has Flashforge Check Code",
             "type": "boolean"
           },
           "has_octoprint_api_key": {
@@ -16760,6 +16946,42 @@
               }
             ],
             "title": "Elegoo Centauri Mainboard Id"
+          },
+          "flashforge_check_code": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flashforge Check Code"
+          },
+          "flashforge_host": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flashforge Host"
+          },
+          "flashforge_serial": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flashforge Serial"
           },
           "group": {
             "anyOf": [
@@ -41777,6 +41999,57 @@
         ]
       }
     },
+    "/api/v1/printers/{printer_id}/job-recipients": {
+      "get": {
+        "operationId": "list_job_recipients_api_v1_printers__printer_id__job_recipients_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "printer_id",
+            "required": true,
+            "schema": {
+              "title": "Printer Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Response List Job Recipients Api V1 Printers  Printer Id  Job Recipients Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Distinct recipients of this printer's print jobs",
+        "tags": [
+          "printers"
+        ]
+      }
+    },
     "/api/v1/printers/{printer_id}/jobs": {
       "get": {
         "operationId": "list_jobs_api_v1_printers__printer_id__jobs_get",
@@ -41798,6 +42071,22 @@
               "default": 50,
               "title": "Limit",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "recipient",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Recipient"
             }
           }
         ],
@@ -41833,6 +42122,72 @@
           }
         ],
         "summary": "List recent print jobs for a printer",
+        "tags": [
+          "printers"
+        ]
+      }
+    },
+    "/api/v1/printers/{printer_id}/jobs/{job_id}": {
+      "patch": {
+        "operationId": "annotate_job_api_v1_printers__printer_id__jobs__job_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "printer_id",
+            "required": true,
+            "schema": {
+              "title": "Printer Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrintJobAnnotation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrintJobRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Set who a logged print was for and its notes",
         "tags": [
           "printers"
         ]

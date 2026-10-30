@@ -71,6 +71,7 @@ from app.schemas.printers import (
     PrinterPermissionUpdate,
     PrinterRead,
     PrinterUpdate,
+    PrintJobAnnotation,
     PrintJobRead,
     SendToPrinter,
     SetTemperature,
@@ -1328,6 +1329,81 @@ async def delete_file_on_printer(
 
 
 @router.get(
+    "/{printer_id}/job-recipients",
+    response_model=List[str],
+    summary="Distinct recipients of this printer's print jobs",
+)
+def list_job_recipients(
+    printer_id: int,
+    current_user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+) -> List[str]:
+    printer_rbac.require_printer_role(
+        session, current_user, printer_id, PrinterRole.VIEW
+    )
+    return list(
+        session.exec(
+            select(PrintJob.recipient)
+            .where(
+                PrintJob.printer_id == printer_id,
+                PrintJob.recipient.is_not(None),  # type: ignore[union-attr]
+                live(PrintJob),
+            )
+            .distinct()
+            .order_by(PrintJob.recipient)
+        ).all()
+    )
+
+
+@router.patch(
+    "/{printer_id}/jobs/{job_id}",
+    response_model=PrintJobRead,
+    summary="Set who a logged print was for and its notes",
+)
+def annotate_job(
+    printer_id: int,
+    job_id: int,
+    payload: PrintJobAnnotation,
+    current_user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+) -> PrintJobRead:
+    printer_rbac.require_printer_role(
+        session, current_user, printer_id, PrinterRole.PRINT
+    )
+    job = session.exec(
+        select(PrintJob).where(
+            PrintJob.id == job_id,
+            PrintJob.printer_id == printer_id,
+            live(PrintJob),
+        )
+    ).first()
+    if job is None:
+        raise HTTPException(status_code=404, detail="print_job_not_found")
+    for field in payload.model_fields_set:
+        setattr(job, field, getattr(payload, field))
+    job.updated_by = current_user.id
+    job.updated_at = utcnow()
+    session.add(job)
+    session.commit()
+    session.refresh(job)
+    file = session.get(File, job.file_id)
+    return PrintJobRead(
+        **job.model_dump(
+            exclude={"artifact_capture_error_code", "artifact_capture_error_message"}
+        ),
+        **reproducibility_payload(
+            job,
+            file_type=file.file_type if file else None,
+            download_url=(
+                f"/api/v1/files/{job.file_id}/download"
+                if job.source == "vault" or job.artifact_evidence.endswith("_archived")
+                else None
+            ),
+        ),
+    )
+
+
+@router.get(
     "/{printer_id}/jobs",
     response_model=List[PrintJobRead],
     summary="List recent print jobs for a printer",
@@ -1335,6 +1411,7 @@ async def delete_file_on_printer(
 def list_jobs(
     printer_id: int,
     limit: int = 50,
+    recipient: Optional[str] = None,
     current_user: User = Depends(require_user),
     session: Session = Depends(get_session),
 ) -> List[PrintJobRead]:
@@ -1345,6 +1422,8 @@ def list_jobs(
         PrintJob.printer_id == printer_id,
         live(PrintJob),
     )
+    if recipient:
+        stmt = stmt.where(PrintJob.recipient == recipient)
     rows = session.exec(
         stmt.order_by(PrintJob.created_at.desc()).limit(limit)  # type: ignore[attr-defined]
     ).all()

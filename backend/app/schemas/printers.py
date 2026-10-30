@@ -6,6 +6,7 @@ from typing import Any, Literal, Optional
 from printstash_core.printers import PrintArtifactFormat
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.core.time import ensure_utc
 from app.db.models import (
     CompatibilityPolicy,
     JobPriority,
@@ -404,10 +405,45 @@ class PrintJobRead(BaseModel):
     operator_decided_at: Optional[datetime] = None
     spool_id: Optional[int] = None
     spool_name: Optional[str] = None
+    filament_used_g: Optional[float] = None
+    actual_duration_s: Optional[int] = None
+    recipient: Optional[str] = None
+    notes: Optional[str] = None
     started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
+
+    # SQLite hands back naive UTC; without an offset the browser reads it as
+    # local time and every printer-history time is shifted by the UTC offset.
+    @field_validator(
+        "started_at",
+        "finished_at",
+        "created_at",
+        "updated_at",
+        "dispatch_claimed_at",
+        "material_override_at",
+        "operator_decided_at",
+    )
+    @classmethod
+    def _as_utc(cls, value: Optional[datetime]) -> Optional[datetime]:
+        return ensure_utc(value) if value is not None else None
+
+
+class PrintJobAnnotation(BaseModel):
+    """Who a logged print was for and free notes; omitted fields are kept."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    recipient: Optional[str] = Field(default=None, max_length=64)
+    notes: Optional[str] = Field(default=None, max_length=4096)
+
+    @field_validator("recipient", "notes")
+    @classmethod
+    def _blank_to_none(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        return v.strip() or None
 
 
 class PrinterFileRead(BaseModel):

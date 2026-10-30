@@ -1256,6 +1256,8 @@ def get_model_print_jobs(
             ),
             spool_id=job.spool_id,
             spool_name=job.spool_name,
+            recipient=job.recipient,
+            notes=job.notes,
             started_at=job.started_at,
             finished_at=job.finished_at,
             created_at=job.created_at,
@@ -1343,6 +1345,8 @@ def create_manual_print_job(
         started_at=payload.started_at,
         finished_at=payload.finished_at,
         error=payload.error,
+        recipient=payload.recipient,
+        notes=payload.notes,
     )
     if state == PrintJobState.COMPLETED:
         job.filament_g_effective, job.cost = print_results.resolve_completion_cost(
@@ -1372,6 +1376,8 @@ def create_manual_print_job(
         error=job.error,
         spool_id=job.spool_id,
         spool_name=job.spool_name,
+        recipient=job.recipient,
+        notes=job.notes,
         started_at=job.started_at,
         finished_at=job.finished_at,
         created_at=job.created_at,

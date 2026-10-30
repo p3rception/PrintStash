@@ -101,6 +101,64 @@ class TestPrinterJobs:
         assert data[0]["state"] == "completed"
         assert data[0]["remote_filename"] == "model.gcode"
 
+    def test_annotates_and_filters_jobs_by_recipient(
+        self, client: TestClient, auth_headers, db_session: Session
+    ):
+        m = build_model(db_session, name="Tweezers", slug="tweezers", hash="r" * 64)
+        f = build_file(
+            db_session,
+            m,
+            path="/data/tweezers.gcode",
+            filename="tweezers.gcode",
+            file_type="gcode",
+            version=1,
+            size_bytes=100,
+            sha256="s" * 64,
+        )
+        p = build_printer(db_session, name="AD5X", moonraker_url="http://10.0.0.1")
+        jobs = [
+            build_print_job(
+                db_session,
+                f,
+                printer_id=p.id,
+                remote_filename="tweezers.gcode",
+                state=PrintJobState.COMPLETED,
+            )
+            for _ in range(2)
+        ]
+        url = f"/api/v1/printers/{p.id}/jobs"
+
+        resp = client.patch(
+            f"{url}/{jobs[0].id}",
+            json={"recipient": "  ntina ", "notes": "gift"},
+            headers=auth_headers,
+        )
+        assert resp.status_code == 200
+        assert (resp.json()["recipient"], resp.json()["notes"]) == ("ntina", "gift")
+
+        # Omitted fields are kept; a blank value clears.
+        resp = client.patch(
+            f"{url}/{jobs[0].id}", json={"notes": " "}, headers=auth_headers
+        )
+        assert (resp.json()["recipient"], resp.json()["notes"]) == ("ntina", None)
+
+        filtered = client.get(url, params={"recipient": "ntina"}, headers=auth_headers)
+        assert [job["id"] for job in filtered.json()] == [jobs[0].id]
+        # Times carry an offset, or the browser shows UTC as local time.
+        assert filtered.json()[0]["created_at"].endswith(("Z", "+00:00"))
+        names = client.get(
+            f"/api/v1/printers/{p.id}/job-recipients", headers=auth_headers
+        )
+        assert names.json() == ["ntina"]
+
+        other = build_printer(db_session, name="Other", moonraker_url="http://10.0.0.2")
+        resp = client.patch(
+            f"/api/v1/printers/{other.id}/jobs/{jobs[1].id}",
+            json={"recipient": "maria"},
+            headers=auth_headers,
+        )
+        assert resp.status_code == 404
+
     def test_non_superuser_cannot_list_jobs(
         self, client: TestClient, db_session: Session
     ):

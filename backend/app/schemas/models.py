@@ -228,9 +228,18 @@ class ModelPrintJobRead(BaseModel):
     filament_cost: Optional[float] = None
     spool_id: Optional[int] = None
     spool_name: Optional[str] = None
+    recipient: Optional[str] = None
+    notes: Optional[str] = None
     started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
     created_at: datetime
+
+    # SQLite hands back naive UTC; without an offset the browser reads it as
+    # local time and every print-history time is shifted by the UTC offset.
+    @field_validator("started_at", "finished_at", "created_at")
+    @classmethod
+    def _as_utc(cls, value: Optional[datetime]) -> Optional[datetime]:
+        return ensure_utc(value) if value is not None else None
 
 
 class ArtifactOutcomeRead(BaseModel):
@@ -591,8 +600,10 @@ class ManualPrintJobCreate(BaseModel):
     started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
     error: Optional[str] = Field(default=None, max_length=1024)
+    recipient: Optional[str] = Field(default=None, max_length=64)
+    notes: Optional[str] = Field(default=None, max_length=4096)
 
-    @field_validator("printer_name")
+    @field_validator("printer_name", "recipient", "notes")
     @classmethod
     def _strip_printer_name(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
