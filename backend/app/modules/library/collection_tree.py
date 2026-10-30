@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, Iterable, Sequence
 
+from printstash_core.files import tidy_name
 from sqlalchemy import and_, bindparam, func, or_
 from sqlalchemy import select as sa_select
 from sqlalchemy.orm import aliased
@@ -255,7 +256,8 @@ def _labels(
         chains.setdefault(path, []).append((ancestor_path, name))
     return {
         path: "/".join(
-            name for _, name in sorted(chains.get(path, []), key=lambda a: len(a[0]))
+            tidy_name(name)
+            for _, name in sorted(chains.get(path, []), key=lambda a: len(a[0]))
         )
         for path in wanted
     }
