@@ -443,6 +443,10 @@ class Settings(BaseSettings):
     # preview directly and never decompresses/parses the mesh. Off restores the
     # previous load-then-fallback behaviour.
     use_embedded_3mf_preview_for_large_files: bool = True
+    # Off renders every 3MF small enough to render from its geometry, like any
+    # other mesh, instead of the picture the file carries, which for a
+    # downloaded project is often the designer's photo of their print.
+    use_embedded_3mf_preview: bool = True
 
     # Hard ceiling on the on-disk size of a mesh file we will hand to trimesh.
     # The triangle estimate above is format-specific and can come up empty — a

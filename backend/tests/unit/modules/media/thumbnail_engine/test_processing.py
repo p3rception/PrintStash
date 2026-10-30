@@ -36,6 +36,18 @@ from .._meshes import (
     _write_renderable_binary_stl,
 )
 
+_TETRAHEDRON_3MF_MODEL = (
+    b'<?xml version="1.0" encoding="UTF-8"?><model unit="millimeter" '
+    b'xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">'
+    b'<resources><object id="1" type="model"><mesh><vertices>'
+    b'<vertex x="0" y="0" z="0"/><vertex x="10" y="0" z="0"/>'
+    b'<vertex x="0" y="10" z="0"/><vertex x="0" y="0" z="10"/></vertices>'
+    b'<triangles><triangle v1="0" v2="2" v3="1"/><triangle v1="0" v2="1" v3="3"/>'
+    b'<triangle v1="1" v2="2" v3="3"/><triangle v1="0" v2="3" v3="2"/>'
+    b"</triangles></mesh></object></resources>"
+    b'<build><item objectid="1"/></build></model>'
+)
+
 
 class TestAnalyzeMesh:
     def test_under_cap_mesh_renders_normally(self, tmp_path: Path, monkeypatch) -> None:
@@ -89,6 +101,34 @@ class TestAnalyzeMesh:
         _geometry, thumb = result.geometry, result.image
         assert thumb == png
 
+    def test_embedded_preview_off_renders_the_mesh(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """A downloaded project's picture is often the designer's photo."""
+        monkeypatch.setitem(_overlay, "use_embedded_3mf_preview", False)
+        p = tmp_path / "designer-photo.3mf"
+        with zipfile.ZipFile(p, "w") as zf:
+            zf.writestr("3D/3dmodel.model", _TETRAHEDRON_3MF_MODEL)
+            zf.writestr("Metadata/thumbnail.png", _valid_preview_png((220, 40, 120)))
+        for renderer in ("render_mesh_thumbnail", "render_scene_thumbnail"):
+            monkeypatch.setattr(
+                mesh_render, renderer, lambda *args, **kwargs: b"RENDERED-MESH"
+            )
+
+        assert analyze(p).image == b"RENDERED-MESH"
+
+    def test_embedded_preview_off_still_falls_back_to_the_picture(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        monkeypatch.setitem(_overlay, "use_embedded_3mf_preview", False)
+        png = _valid_preview_png((32, 160, 240))
+        p = tmp_path / "unreadable.3mf"
+        with zipfile.ZipFile(p, "w") as zf:
+            zf.writestr("3D/3dmodel.model", b"<mesh/>")
+            zf.writestr("Metadata/thumbnail.png", png)
+
+        assert analyze(p).image == png
+
     def test_refuses_thumbnail_when_source_validation_exceeds_budget(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -112,6 +152,7 @@ class TestAnalyzeMesh:
         )
         path.write_text("solid truncated\n" + (facet * 20) + "endsolid truncated\n")
         monkeypatch.setattr(mesh_policy, "estimate_triangle_count", lambda _p: None)
+
         def refuse_source(*_args):
             raise GeometryError("invalid_source")
 
@@ -147,6 +188,7 @@ class TestAnalyzeMesh:
         )
         path.write_text("solid truncated\n" + (facet * 20) + "endsolid truncated\n")
         monkeypatch.setattr(mesh_policy, "estimate_triangle_count", lambda _p: None)
+
         def refuse_source(*_args):
             raise GeometryError("invalid_source")
 

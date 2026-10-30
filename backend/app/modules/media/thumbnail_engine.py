@@ -320,7 +320,7 @@ class _Generation:
                 # without parsing the mesh archive. Ingestion still loads safe
                 # meshes once because it also needs exact geometry metadata.
                 if (
-                    self.embedded is not None
+                    self._embedded_preferred()
                     and not self.request.include_geometry
                     and not self.request.include_fingerprint
                 ):
@@ -421,6 +421,17 @@ class _Generation:
                 ThumbnailFailureReason.RESOURCE_LIMIT
             )
 
+    def _embedded_preferred(self) -> bool:
+        """Show the file's own picture instead of rendering it.
+
+        With ``use_embedded_3mf_preview`` off a renderable 3MF is drawn from its
+        geometry; the picture stays the fallback when rendering fails or the
+        file is too large to render.
+        """
+        return self.embedded is not None and (
+            settings.use_embedded_3mf_preview or self.over_cap
+        )
+
     def _embedded(self) -> None:
         """Take a 3MF's own picture, and publish it before the mesh is read."""
         if (
@@ -438,7 +449,7 @@ class _Generation:
             self.phases.finish(
                 output_bytes=len(self.embedded) if self.embedded is not None else None
             )
-            if self.embedded is not None:
+            if self._embedded_preferred():
                 # The slicer's own picture is ready now. Publish it
                 # before the mesh is read, so the Model has a thumbnail
                 # while its geometry is still being measured.
@@ -706,7 +717,7 @@ class _Generation:
         if self.request.include_thumbnail:
             self.phases.start(MeshPhase.RENDER)
             self.report("rendering_thumbnail")
-            if self.embedded is not None:
+            if self._embedded_preferred():
                 self.image = self.embedded
                 self.strategy = ThumbnailStrategy.EMBEDDED
                 self.preview_coverage = PreviewCoverage.DOCUMENT_SUPPLIED
@@ -1067,6 +1078,17 @@ class _Generation:
 
     def _finish(self) -> ThumbnailResult | PreparedThumbnailResult:
         """Publish what is still owed, record metrics and build the result."""
+        if (
+            self.request.include_thumbnail
+            and self.image is None
+            and self.packet is None
+            and self.embedded is not None
+        ):
+            # Rendering was preferred over the file's own picture and produced
+            # nothing; the picture still beats no thumbnail.
+            self.image = self.embedded
+            self.strategy = ThumbnailStrategy.EMBEDDED
+            self.preview_coverage = PreviewCoverage.DOCUMENT_SUPPLIED
         try:
             self.emit_geometry()
             self.emit_thumbnail()
