@@ -201,13 +201,28 @@ class LibraryWatcher:
         from watchfiles import awatch
 
         try:
-            async for _changes in awatch(
-                root,
-                recursive=True,
-                stop_event=stop,
-                force_polling=force_polling,
-            ):
-                self._schedule_scan(library_id)
+            try:
+                async for _changes in awatch(
+                    root,
+                    recursive=True,
+                    stop_event=stop,
+                    force_polling=force_polling,
+                ):
+                    self._schedule_scan(library_id)
+            except PermissionError:
+                # Some NAS share roots refuse an inotify watch to a uid that can
+                # still read them (UGOS ACLs); stat-polling works there.
+                if force_polling:
+                    raise
+                logger.warning(
+                    "events refused for library %s at %s; polling instead",
+                    library_id,
+                    root,
+                )
+                async for _changes in awatch(
+                    root, recursive=True, stop_event=stop, force_polling=True
+                ):
+                    self._schedule_scan(library_id)
         except asyncio.CancelledError:
             raise
         except Exception:

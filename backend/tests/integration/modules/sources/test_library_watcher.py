@@ -327,6 +327,29 @@ class TestStopWatcher:
         assert "falling back to scheduled scans" in caplog.text
         assert not missing_root.exists()
 
+    def test_refused_events_fall_back_to_polling(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        calls: list[bool] = []
+
+        async def fake_awatch(*_args, force_polling: bool, **_kwargs):
+            calls.append(force_polling)
+            if not force_polling:
+                raise PermissionError("Permission denied (os error 13)")
+            yield {("added", "x.stl")}
+
+        monkeypatch.setattr("watchfiles.awatch", fake_awatch)
+        watcher = lw.LibraryWatcher()
+        scheduled: list[int] = []
+        monkeypatch.setattr(watcher, "_schedule_scan", scheduled.append)
+
+        asyncio.run(
+            watcher._run_watcher(1, str(tmp_path), False, asyncio.Event())  # noqa: SLF001
+        )
+
+        assert calls == [False, True]
+        assert scheduled == [1]
+
     def test_start_watcher_is_idempotent_for_an_active_library(
         self, tmp_path: Path
     ) -> None:
