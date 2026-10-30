@@ -303,6 +303,10 @@ export interface PrintJobRead {
   finished_at: string | null;
   created_at: string;
   updated_at: string;
+  filament_used_g?: number | null;
+  actual_duration_s?: number | null;
+  recipient?: string | null;
+  notes?: string | null;
 }
 
 export interface PrintJobIdentityRead {

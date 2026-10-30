@@ -13,17 +13,19 @@ import {
 import { formatNumber } from "@/lib/format";
 import { useUiLocale } from "@/lib/i18n";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { Link } from "@/lib/link";
 import type { ProviderJsonObject, ProviderJsonValue } from "@/types/printers";
 import {
   PrinterFileRead,
   PrinterRead,
+  PrintJobRead,
   PrinterSnapshot,
   PrinterStatus,
   PrinterUpdate,
 } from "@/types";
 import {
+  annotatePrinterJob,
   cancelPrinter,
   emergencyStopPrinter,
   homePrinter,
@@ -42,7 +44,7 @@ import { userMessage } from "@/lib/errors";
 import { isLoggedIn, onAuthChange } from "@/lib/auth-store";
 import { toast } from "@/lib/toast";
 import { useRequireAuth } from "@/lib/use-require-auth";
-import { formatBytes, formatDuration } from "@/lib/format";
+import { formatBytes, formatDuration, formatGrams } from "@/lib/format";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TabBar } from "@/components/ui/tabs";
@@ -199,11 +201,14 @@ function PrinterDetailView({
   const [deletingFileId, setDeletingFileId] = useState<number | null>(null);
   const [syncingFiles, setSyncingFiles] = useState(false);
   const [confirmEmergencyStop, setConfirmEmergencyStop] = useState(false);
+  const [personFilter, setPersonFilter] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<PrinterFileRead | null>(null);
   const lifetime = useRef(0);
 
   const viewRequests = useRef(new AbortController());
   const loadJobs = useCallback(() => refresh(printerKeys.jobs(printerId)), [refresh, printerId]);
+  const people = [...new Set(jobs.flatMap((j) => (j.recipient ? [j.recipient] : [])))].sort();
+  const shownJobs = personFilter ? jobs.filter((j) => j.recipient === personFilter) : jobs;
   const loadDiagnostics = () => resources.refresh(printerKeys.diagnostics(printerId));
   const loadMoonrakerConfig = () => resources.refresh(printerKeys.config(printerId));
 
@@ -1126,11 +1131,26 @@ function PrinterDetailView({
                 <h2 className="text-sm font-semibold text-foreground">{uiText("Print history")}</h2>
                 {jobs.length > 0 && (
                   <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-3xs font-semibold text-muted-foreground">
-                    {uiText("counts.jobs", { count: jobs.length })}
+                    {uiText("counts.jobs", { count: shownJobs.length })}
                   </span>
                 )}
+                {people.length > 0 && (
+                  <select
+                    aria-label={uiText("Filter by person")}
+                    value={personFilter}
+                    onChange={(e) => setPersonFilter(e.target.value)}
+                    className="ml-auto bg-background text-foreground text-xs border border-border rounded px-2 py-1"
+                  >
+                    <option value="">{uiText("All people")}</option>
+                    {people.map((person) => (
+                      <option key={person} value={person}>
+                        {person}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
-              {jobs.length === 0 ? (
+              {shownJobs.length === 0 ? (
                 <div className="p-10 text-center font-mono text-xs text-muted-foreground">
                   {uiText("No print jobs yet.")}
                 </div>
@@ -1141,14 +1161,17 @@ function PrinterDetailView({
                       <tr className="border-b border-border text-left font-mono text-3xs uppercase tracking-wider text-muted-foreground">
                         <th className="py-3 px-4 font-medium">{uiText("When")}</th>
                         <th className="py-3 px-4 font-medium">{uiText("File")}</th>
+                        <th className="py-3 px-4 font-medium">{uiText("For")}</th>
                         <th className="py-3 px-4 font-medium">{uiText("State")}</th>
                         <th className="py-3 px-4 font-medium text-right">{uiText("Progress")}</th>
                         <th className="py-3 px-4 font-medium">{uiText("Started")}</th>
+                        <th className="py-3 px-4 font-medium">{uiText("Duration")}</th>
+                        <th className="py-3 px-4 font-medium text-right">{uiText("Filament")}</th>
                         <th className="py-3 px-4 font-medium">{uiText("Finished")}</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {jobs.map((j) => (
+                      {shownJobs.map((j) => (
                         <tr
                           key={j.id}
                           className="border-b border-border transition-colors last:border-0 hover:bg-muted/30"
@@ -1162,16 +1185,16 @@ function PrinterDetailView({
                               <Link
                                 href={`/models/${j.model_id}`}
                                 className="font-mono text-xs text-foreground hover:text-primary hover:underline"
-                                title={printJobArtifactLabel(j)}
+                                title={jobFileLabel(j, printer.provider)}
                               >
-                                {printJobArtifactLabel(j)}
+                                {jobFileLabel(j, printer.provider)}
                               </Link>
                             ) : (
                               <span
                                 className="font-mono text-xs text-foreground"
-                                title={printJobArtifactLabel(j)}
+                                title={jobFileLabel(j, printer.provider)}
                               >
-                                {printJobArtifactLabel(j)}
+                                {jobFileLabel(j, printer.provider)}
                               </span>
                             )}
                             {j.source === "external" && (
@@ -1179,14 +1202,32 @@ function PrinterDetailView({
                                 {knownUiText(j.artifact_evidence)}
                               </span>
                             )}
-                            <PrintJobReproducibility
+                            {j.notes && (
+                              <span className="mt-1 block text-xs italic text-muted-foreground">
+                                {j.notes}
+                              </span>
+                            )}
+                            {/* Only a captured file has anything to reproduce from. */}
+                            {(printer.provider === "bambu_lan" ||
+                              j.artifact_evidence.endsWith("_archived")) && (
+                              <PrintJobReproducibility
+                                job={j}
+                                previewHref={
+                                  j.artifact_evidence === "vault" ||
+                                  j.artifact_evidence.endsWith("_archived")
+                                    ? `/models/${j.model_id}`
+                                    : null
+                                }
+                              />
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            <JobPersonCell
                               job={j}
-                              previewHref={
-                                j.artifact_evidence === "vault" ||
-                                j.artifact_evidence.endsWith("_archived")
-                                  ? `/models/${j.model_id}`
-                                  : null
-                              }
+                              printerId={printerId}
+                              people={people}
+                              canEdit={printer.access.can_print}
+                              onSaved={loadJobs}
                             />
                           </td>
                           <td className="py-3 px-4">
@@ -1201,6 +1242,12 @@ function PrinterDetailView({
                             {j.started_at
                               ? new Date(j.started_at).toLocaleTimeString(currentLocale())
                               : "—"}
+                          </td>
+                          <td className="py-3 px-4 font-mono text-xs text-muted-foreground whitespace-nowrap">
+                            {formatDuration(j.actual_duration_s)}
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono text-xs text-muted-foreground whitespace-nowrap">
+                            {formatGrams(j.filament_used_g)}
                           </td>
                           <td className="py-3 px-4 font-mono text-xs text-muted-foreground whitespace-nowrap">
                             {j.finished_at
@@ -1989,5 +2036,107 @@ function TempRow({ label, cur, tgt }: { label: string; cur?: number; tgt?: numbe
         </div>
       )}
     </div>
+  );
+}
+
+/** Bambu can report a transport name, so it keeps the reported-artifact label. */
+function jobFileLabel(job: PrintJobRead, provider: PrinterRead["provider"]): string {
+  if (provider === "bambu_lan") return printJobArtifactLabel(job);
+  return job.remote_filename.split("/").pop() || printJobArtifactLabel(job);
+}
+
+/** Who a logged print was for, plus its notes, edited in place. */
+function JobPersonCell({
+  job,
+  printerId,
+  people,
+  canEdit,
+  onSaved,
+}: {
+  job: PrintJobRead;
+  printerId: number;
+  people: string[];
+  canEdit: boolean;
+  onSaved: () => void;
+}) {
+  const listId = useId();
+  const [editing, setEditing] = useState(false);
+  const [recipient, setRecipient] = useState("");
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const label = job.recipient ?? uiText("+ add");
+  if (!editing) {
+    return canEdit ? (
+      <button
+        type="button"
+        onClick={() => {
+          setRecipient(job.recipient ?? "");
+          setNotes(job.notes ?? "");
+          setEditing(true);
+        }}
+        className="rounded border border-border px-2 py-0.5 font-mono text-xs text-foreground hover:bg-muted"
+      >
+        {label}
+      </button>
+    ) : (
+      <span className="font-mono text-xs text-foreground">{job.recipient ?? "-"}</span>
+    );
+  }
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await annotatePrinterJob(printerId, job.id, { recipient, notes });
+      setEditing(false);
+      onSaved();
+    } catch (err) {
+      toast.error(err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form
+      onSubmit={save}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") setEditing(false);
+      }}
+      className="flex min-w-[12rem] flex-col gap-1.5"
+    >
+      <Input
+        autoFocus
+        list={listId}
+        value={recipient}
+        onChange={(e) => setRecipient(e.target.value)}
+        placeholder={uiText("Who is it for?")}
+        aria-label={uiText("For")}
+        maxLength={64}
+        className="h-7 text-xs"
+      />
+      <datalist id={listId}>
+        {people.map((person) => (
+          <option key={person} value={person} />
+        ))}
+      </datalist>
+      <Input
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder={uiText("Notes")}
+        aria-label={uiText("Notes")}
+        maxLength={4096}
+        className="h-7 text-xs"
+      />
+      <div className="flex gap-1.5">
+        <Button type="submit" size="xs" disabled={saving}>
+          {uiText("Save")}
+        </Button>
+        <Button type="button" size="xs" variant="ghost" onClick={() => setEditing(false)}>
+          {uiText("Cancel")}
+        </Button>
+      </div>
+    </form>
   );
 }

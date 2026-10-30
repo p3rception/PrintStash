@@ -216,6 +216,14 @@ export function listPrinterJobs(
   return getJson<PrintJobRead[]>(`/api/v1/printers/${id}/jobs?limit=${limit}`, options);
 }
 
+export function annotatePrinterJob(
+  printerId: number,
+  jobId: number,
+  payload: { recipient?: string; notes?: string },
+): Promise<PrintJobRead> {
+  return sendJson<PrintJobRead>(`/api/v1/printers/${printerId}/jobs/${jobId}`, "PATCH", payload);
+}
+
 export async function openPrinterWS(id: number, signal?: AbortSignal): Promise<WebSocket> {
   let closeOpened = () => {};
   try {

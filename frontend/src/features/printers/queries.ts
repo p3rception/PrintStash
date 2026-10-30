@@ -39,7 +39,7 @@ import type { PrinterRead, StartPrinterFile } from "@/types";
 export const printerKeys = {
   all: ["printers"] as const,
   detail: (id: number) => ["printers", id] as const,
-  jobs: (id: number) => ["printers", id, "jobs", 50] as const,
+  jobs: (id: number) => ["printers", id, "jobs", 500] as const,
   files: (id: number) => ["printers", id, "files"] as const,
   diagnostics: (id: number) => ["printers", id, "diagnostics"] as const,
   config: (id: number) => ["printers", id, "config"] as const,
@@ -183,7 +183,9 @@ export function printerDetailOptions(id: number) {
 export function printerJobsOptions(id: number) {
   return queryOptions({
     queryKey: printerKeys.jobs(id),
-    queryFn: ({ signal }) => listPrinterJobs(id, 50, { signal }),
+    // ponytail: the history page filters by person in the browser, so it loads
+    // the whole log; switch to the API's ?recipient= filter past ~500 prints.
+    queryFn: ({ signal }) => listPrinterJobs(id, 500, { signal }),
     staleTime: 30_000,
   });
 }

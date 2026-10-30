@@ -4638,5 +4638,11 @@
   "Uploads provide persistent completion links; backup, printer, notification and member settings improve recovery guidance, permissions, accessibility and small-screen layouts": "Las cargas ofrecen enlaces persistentes al completarse; los ajustes de copias de seguridad, impresoras, notificaciones y miembros mejoran las indicaciones de recuperación, los permisos, la accesibilidad y los diseños en pantallas pequeñas",
   "Task Center batches updates, imports and search avoid repeated database work, and native mesh workers reduce startup, memory-monitoring and cancellation overhead": "El Centro de tareas agrupa actualizaciones, las importaciones y la búsqueda evitan trabajo repetido en la base de datos, y los procesos nativos de mallas reducen el coste de inicio, supervisión de memoria y cancelación",
   "The Imports settings link to the published Chrome extension, and documentation links open the PrintStash documentation site": "Los ajustes de Importaciones enlazan con la extensión de Chrome publicada y los enlaces de documentación abren el sitio de documentación de PrintStash",
-  "Check code": "Código de verificación"
+  "Check code": "Código de verificación",
+  "+ add": "+ añadir",
+  "All people": "Todas las personas",
+  "Duration": "Duración",
+  "Filter by person": "Filtrar por persona",
+  "For": "Para",
+  "Who is it for?": "¿Para quién es?"
 }
