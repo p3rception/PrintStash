@@ -14,6 +14,7 @@ import asyncio
 import tempfile
 import threading
 import time
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Callable, Dict
 from urllib.parse import unquote, urlparse
@@ -1107,7 +1108,13 @@ class PrinterHub:
                 job.progress = progress
                 changed = True
             if new_state == PrintJobState.PRINTING and job.started_at is None:
-                job.started_at = utcnow()
+                # A print first seen part-way through (started from a slicer,
+                # or while PrintStash was down) began when the printer says.
+                elapsed = _reported_float(
+                    print_stats.get("total_duration")
+                    or print_stats.get("print_duration")
+                )
+                job.started_at = utcnow() - timedelta(seconds=elapsed or 0.0)
                 changed = True
             just_finished = False
             if (

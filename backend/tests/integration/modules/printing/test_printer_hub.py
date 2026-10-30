@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
+from datetime import timedelta
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -12,6 +13,7 @@ import pytest
 from sqlmodel import Session, select
 
 from app.core.config import _overlay, settings
+from app.core.time import ensure_utc, utcnow
 from app.db.models import (
     MaterialSlotState,
     MaterialSource,
@@ -561,6 +563,27 @@ class TestPrinterHubSyncActiveJob:
             assert rows[0].state == PrintJobState.COMPLETED
             assert rows[0].progress == pytest.approx(1.0)
             assert rows[0].finished_at is not None
+
+    def test_print_first_seen_midway_starts_when_the_printer_says(
+        self, hub, db_session
+    ):
+        pid, _ = self._setup_job(db_session)
+        before = utcnow()
+        hub._sync_active_job_db(
+            pid,
+            "printing",
+            "late.gcode",
+            0.5,
+            {"state": "printing", "filename": "late.gcode", "print_duration": 3600},
+        )
+        with get_session_factory().session() as session:
+            job = session.exec(
+                select(PrintJob).where(PrintJob.remote_filename == "late.gcode")
+            ).one()
+            started = ensure_utc(job.started_at)
+        assert before - started == pytest.approx(
+            timedelta(hours=1), abs=timedelta(seconds=5)
+        )
 
     def test_sync_complete_sets_finished_at(self, hub, db_session):
         pid, job = self._setup_job(db_session)
