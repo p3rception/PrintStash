@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, Iterable, Sequence
 
-from printstash_core.files import tidy_name
+from printstash_core.files import is_main_file, tidy_name
 from sqlalchemy import and_, bindparam, func, or_
 from sqlalchemy import select as sa_select
 from sqlalchemy.orm import aliased
@@ -34,7 +34,6 @@ from app.db.models import (
     CollectionRole,
     CollectionTagLink,
     File,
-    FileType,
     Model,
     Tag,
     User,
@@ -279,11 +278,11 @@ def collection_labels(
 
 
 def collection_covers(session: Session, ids: Sequence[int]) -> dict[int, str]:
-    """One thumbnail per collection: its AD5X-sliced 3MF, else its newest model."""
+    """One thumbnail per collection: its main file, else its newest model."""
     if not ids:
         return {}
     rows = session.exec(
-        select(Model, File.original_filename, File.file_type)
+        select(Model, File.original_filename)
         .join(File, File.id == Model.thumbnail_file_id)  # type: ignore[arg-type]
         .where(
             Model.collection_id.in_(ids),  # type: ignore[union-attr]
@@ -294,12 +293,12 @@ def collection_covers(session: Session, ids: Sequence[int]) -> dict[int, str]:
     ).all()
     covers: dict[int, str] = {}
     sliced: set[int] = set()
-    for model, filename, file_type in rows:
+    for model, filename in rows:
         collection_id = model.collection_id
         url = thumb_url(model)
         if collection_id is None or url is None or collection_id in sliced:
             continue
-        if file_type == FileType.THREE_MF and "ad5x" in filename.lower():
+        if is_main_file(filename):
             covers[collection_id] = url
             sliced.add(collection_id)
         else:

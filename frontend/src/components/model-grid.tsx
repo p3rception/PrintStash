@@ -956,17 +956,21 @@ export function ModelBrowser({ initial }: { initial?: BrowserInitialData }) {
   }, [entry]);
   const currentRefresh = refreshState?.entry === entry ? refreshState : null;
   const browseReady = projectionReady && currentRefresh === null;
-  const orderedItems = useMemo<LibraryItem[]>(
-    () =>
+  const orderedItems = useMemo<LibraryItem[]>(() => {
+    const items =
       modelQuery.data?.pages.flatMap((page) =>
         page.items.map((entry): LibraryItem =>
           entry.kind === "model"
             ? { kind: "model", value: entry.model }
             : { kind: "multipart", value: entry.multipart },
         ),
-      ) ?? [],
-    [modelQuery.data],
-  );
+      ) ?? [];
+    if (selectedCollection === null) return items;
+    // Inside a folder its print-ready file(s) lead; the chosen sort still
+    // orders each group. ponytail: across loaded pages only, fine for folders.
+    const isMain = (item: LibraryItem) => item.kind === "model" && item.value.is_main === true;
+    return [...items.filter(isMain), ...items.filter((item) => !isMain(item))];
+  }, [modelQuery.data, selectedCollection]);
   // A filter lists matching Models from the whole subtree, so the open folder's
   // subfolders are not part of that result: showing them beside it mixes a
   // place to browse with a list of matches.

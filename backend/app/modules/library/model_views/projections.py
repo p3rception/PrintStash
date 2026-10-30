@@ -7,6 +7,7 @@ from collections import defaultdict
 from functools import lru_cache
 from typing import Optional
 
+from printstash_core.files import is_main_file
 from printstash_core.mesh.measurements import encode_volume
 from pydantic import ValidationError
 from sqlalchemy import bindparam, case, func, text
@@ -322,6 +323,18 @@ def _hydrate_list_rows(
     for model_id, file_id in session.exec(mesh_query, params=parameters).all():
         mesh_file_ids.setdefault(int(model_id), int(file_id))
 
+    main_ids = {
+        model_id
+        for model_id, filename in session.exec(
+            select(File.model_id, File.original_filename).where(
+                File.model_id.in_(model_ids),  # type: ignore[attr-defined]
+                File.file_type == FileType.THREE_MF,
+                live(File),
+            )
+        ).all()
+        if is_main_file(filename)
+    }
+
     recommended: dict[int, tuple[FileRevisionStatus | None, str | None]] = {}
     for model_id, rev_status, rev_label in session.exec(
         recommended_query, params=parameters
@@ -401,6 +414,7 @@ def _hydrate_list_rows(
                 recommended_revision_status=rec_status,
                 recommended_revision_label=rec_label,
                 starred=model.id in starred_ids,
+                is_main=model.id in main_ids,
             )
         )
     return out

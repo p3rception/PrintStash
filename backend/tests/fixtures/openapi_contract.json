@@ -11070,6 +11070,11 @@
             "title": "Id",
             "type": "integer"
           },
+          "is_main": {
+            "default": false,
+            "title": "Is Main",
+            "type": "boolean"
+          },
           "mesh_file_id": {
             "anyOf": [
               {

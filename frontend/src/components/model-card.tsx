@@ -306,6 +306,12 @@ function ModelCardInner({
               </div>
             }
           >
+            {model.is_main && (
+              <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground shadow-sm">
+                <Star className="h-3 w-3 fill-current" aria-hidden />
+                {uiText("Main")}
+              </span>
+            )}
             {hasPrinter && (
               <div className="absolute bottom-2 right-2">
                 <span className="text-3xs font-bold text-green-700 bg-green-50 dark:bg-green-950/60 px-1.5 py-0.5 border border-green-200 dark:border-green-800 rounded-sm uppercase">

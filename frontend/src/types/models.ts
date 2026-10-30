@@ -250,6 +250,8 @@ export interface ModelListItem {
   recommended_revision_status?: FileRevisionStatus | null;
   recommended_revision_label?: string | null;
   starred: boolean;
+  /** The folder's print-ready file (an AD5X-sliced 3MF). */
+  is_main?: boolean;
 }
 
 export interface TrashedModelRead {

@@ -298,6 +298,8 @@ class ModelListItem(EditingBase):
     recommended_revision_status: Optional[FileRevisionStatus] = None
     recommended_revision_label: Optional[str] = None
     starred: bool = False
+    # The folder's print-ready file (an AD5X-sliced 3MF), shown first and badged.
+    is_main: bool = False
 
 
 class ModelSort(str, Enum):

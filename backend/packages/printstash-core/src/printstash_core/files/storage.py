@@ -76,6 +76,11 @@ def tidy_name(name: str) -> str:
     return text[:1].upper() + text[1:] if text else name
 
 
+def is_main_file(filename: str) -> bool:
+    """A 3MF sliced for the AD5X (``*_AD5X.3mf``), a folder's print-ready file."""
+    return filename.lower().endswith("_ad5x.3mf")
+
+
 def ensure_unique_slug(base: str, exists: Callable[[str], bool]) -> str:
     """Append ``-2``, ``-3``, and so on until a slug is available."""
     candidate = base
