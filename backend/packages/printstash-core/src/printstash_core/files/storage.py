@@ -61,6 +61,21 @@ def slugify(name: str) -> str:
     return slug or "model"
 
 
+def tidy_name(name: str) -> str:
+    """A readable display name for a file stem or folder name.
+
+    ``Bag+Clip+-+Set+of+4_AD5X`` -> ``Bag Clip - Set of 4 (AD5X)``. URL-style
+    ``+``, ``_`` and word-joining hyphens become spaces, a trailing printer
+    suffix is set apart, and the first letter is capitalised.
+    """
+    text = re.sub(r"[_\s+]ad5x$", " (AD5X)", name.replace("+", " "), flags=re.I)
+    text = re.sub(r"\.orig$", " (original)", text)
+    text = re.sub(r"(?<=[A-Za-z0-9])-(?=[A-Za-z0-9])", " ", text.replace("_", " "))
+    text = re.sub(r"\bad5x\b", "AD5X", text, flags=re.I)
+    text = " ".join(text.split())
+    return text[:1].upper() + text[1:] if text else name
+
+
 def ensure_unique_slug(base: str, exists: Callable[[str], bool]) -> str:
     """Append ``-2``, ``-3``, and so on until a slug is available."""
     candidate = base

@@ -20,6 +20,7 @@ from .storage import (
     publish_staged_file,
     slugify,
     stream_to_path,
+    tidy_name,
     validate_leaf_name,
 )
 
@@ -41,6 +42,7 @@ __all__ = [
     "sha256_file",
     "sha256_stream",
     "slugify",
+    "tidy_name",
     "stream_to_path",
     "validate_leaf_name",
 ]

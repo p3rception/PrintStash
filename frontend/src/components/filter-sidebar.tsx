@@ -594,7 +594,7 @@ function CollectionTreeRow({
               ) : (
                 <Folder className="h-3.5 w-3.5 flex-shrink-0" />
               )}
-              <span className="truncate">{node.name}</span>
+              <span className="truncate">{node.display_name ?? node.name}</span>
             </button>
             <span className="relative flex-shrink-0">
               <span

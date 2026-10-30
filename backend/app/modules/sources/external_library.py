@@ -27,7 +27,7 @@ from time import monotonic
 from typing import Optional
 
 from croniter import croniter
-from printstash_core.files import slugify
+from printstash_core.files import slugify, tidy_name
 from sqlalchemy import exists, func, or_, update
 from sqlmodel import Session, col, select
 
@@ -468,7 +468,7 @@ def _index_external_file(
     model, created = resolve_or_create_model(
         session,
         dedup_hash=blob_hash,
-        model_name=source_path.stem,
+        model_name=tidy_name(source_path.stem),
         actor=None,
         collection=home,
     )
@@ -621,7 +621,7 @@ def _index_remote_file(
         model, created = resolve_or_create_model(
             session,
             dedup_hash=blob_hash,
-            model_name=source_name.stem,
+            model_name=tidy_name(source_name.stem),
             actor=None,
             collection=home,
         )

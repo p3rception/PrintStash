@@ -46,6 +46,7 @@ from printstash_core.files import (
     sha256_stream,
     slugify,
     stream_to_path,
+    tidy_name,
     validate_leaf_name,
 )
 
@@ -630,3 +631,19 @@ class TestStreamCancellation:
         assert source.tell() == len(b"finished bytes")
         assert not destination.exists()
         assert list(tmp_path.glob(STAGING_GLOB)) == []
+
+
+@pytest.mark.parametrize(
+    ("raw", "tidy"),
+    [
+        ("Bag+Clip+-+Set+of+4_AD5X", "Bag Clip - Set of 4 (AD5X)"),
+        ("2-slot-remote-stand", "2 slot remote stand"),
+        ("ad5x_poop_cup", "AD5X poop cup"),
+        ("lizard_50mm_ad5x", "Lizard 50mm (AD5X)"),
+        ("wattepad+0,20mm_2_set_AD5X", "Wattepad 0,20mm 2 set (AD5X)"),
+        ("ad5x_cup_poopchute.orig", "AD5X cup poopchute (original)"),
+        ("Tweezer Set - v2", "Tweezer Set - v2"),
+    ],
+)
+def test_tidy_name(raw: str, tidy: str) -> None:
+    assert tidy_name(raw) == tidy

@@ -995,6 +995,10 @@ export interface CollectionRead {
   tags: string[];
   /** False lets a folder view skip the readme request entirely. */
   has_readme: boolean;
+  /** Readable form of `name`; mirrored folders keep their on-disk name. */
+  display_name?: string;
+  /** Thumbnail of a model filed directly in this folder. */
+  cover_url?: string | null;
 }
 
 /** One collection of the lazily loaded tree (`/collections/children`, `/lookup`, `/search`). */

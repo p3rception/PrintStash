@@ -5,7 +5,15 @@ from enum import Enum
 from typing import List, Literal, Optional
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from printstash_core.files import tidy_name
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    computed_field,
+    field_validator,
+    model_validator,
+)
 
 from app.core.time import ensure_utc
 from app.db.models import CollectionRole, FileRevisionStatus, FileType, PrintJobState
@@ -634,6 +642,15 @@ class CollectionRead(BaseModel):
     # Lets a folder view skip the readme request for the folders (most of them)
     # that have none.
     has_readme: bool = False
+    # Thumbnail of a model filed directly in this collection, for its folder card.
+    cover_url: Optional[str] = None
+
+    # Mirrored library folders keep their on-disk name (a rename would be undone
+    # by the next scan), so the readable form is derived, never stored.
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def display_name(self) -> str:
+        return tidy_name(self.name)
 
 
 class CollectionNodeRead(CollectionRead):

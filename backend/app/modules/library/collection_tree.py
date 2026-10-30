@@ -32,12 +32,15 @@ from app.db.models import (
     Collection,
     CollectionRole,
     CollectionTagLink,
+    File,
+    FileType,
     Model,
     Tag,
     User,
 )
 from app.db.scopes import live
 from app.modules.identity import rbac
+from app.modules.library.model_views.thumbnails import thumb_url
 from app.schemas.models import (
     CollectionLookupRead,
     CollectionNodeRead,
@@ -273,6 +276,35 @@ def collection_labels(
     )
 
 
+def collection_covers(session: Session, ids: Sequence[int]) -> dict[int, str]:
+    """One thumbnail per collection: its AD5X-sliced 3MF, else its newest model."""
+    if not ids:
+        return {}
+    rows = session.exec(
+        select(Model, File.original_filename, File.file_type)
+        .join(File, File.id == Model.thumbnail_file_id)  # type: ignore[arg-type]
+        .where(
+            Model.collection_id.in_(ids),  # type: ignore[union-attr]
+            Model.thumbnail_file_id.is_not(None),  # type: ignore[union-attr]
+            live(Model),
+        )
+        .order_by(Model.id.desc())  # type: ignore[union-attr]
+    ).all()
+    covers: dict[int, str] = {}
+    sliced: set[int] = set()
+    for model, filename, file_type in rows:
+        collection_id = model.collection_id
+        url = thumb_url(model)
+        if collection_id is None or url is None or collection_id in sliced:
+            continue
+        if file_type == FileType.THREE_MF and "ad5x" in filename.lower():
+            covers[collection_id] = url
+            sliced.add(collection_id)
+        else:
+            covers.setdefault(collection_id, url)
+    return covers
+
+
 def _nodes(
     session: Session,
     user: User,
@@ -289,6 +321,7 @@ def _nodes(
     )
     tags = collection_tags(session, ids) if ids else {}
     display = _labels(session, (row.path for row in rows), visible)
+    covers = collection_covers(session, ids)
     return [
         CollectionNodeRead(
             id=row.id,
@@ -303,6 +336,7 @@ def _nodes(
             child_count=children.get(row.id, 0),
             descendant_count=subtrees[row.path].collections,
             display_path=display[row.path],
+            cover_url=covers.get(row.id),
         )
         for row in rows
     ]

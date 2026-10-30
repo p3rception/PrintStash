@@ -1053,7 +1053,7 @@ export function ModelBrowser({ initial }: { initial?: BrowserInitialData }) {
   );
   const visibleCollections = snapshot?.collections ?? [];
   const breadcrumbs = snapshot?.breadcrumbs ?? [];
-  const selectedName = snapshot?.collection?.name ?? null;
+  const selectedName = snapshot?.collection?.display_name ?? snapshot?.collection?.name ?? null;
   const canRenameCollection =
     auth.isAuthenticated &&
     displayedCollection !== null &&
@@ -2387,7 +2387,7 @@ export function ModelBrowser({ initial }: { initial?: BrowserInitialData }) {
                       className="min-w-0 truncate font-medium text-foreground"
                       title={crumb.name}
                     >
-                      {crumb.name}
+                      {crumb.display_name ?? crumb.name}
                     </button>
                   </span>
                 ))}
@@ -3391,7 +3391,23 @@ function CollectionFolderCard({
               : "border-border hover:border-primary"
         }`}
       >
-        <div className="flex-1 flex items-center justify-center bg-muted/60 dark:bg-surface-container-high min-h-[100px] sm:min-h-[140px]">
+        <div className="relative flex-1 flex items-center justify-center bg-muted/60 dark:bg-surface-container-high min-h-[100px] sm:min-h-[140px]">
+          {collection.cover_url ? (
+            <ProtectedThumbnail
+              path={collection.cover_url}
+              alt=""
+              fade
+              className="absolute inset-0"
+              imageClassName="h-full w-full object-contain"
+              placeholder={
+                <div className="flex h-full w-full items-center justify-center">
+                  <Folder className="w-12 h-12 sm:w-16 sm:h-16 text-primary/30" />
+                </div>
+              }
+            />
+          ) : (
+            <Folder className="w-12 h-12 sm:w-16 sm:h-16 text-primary/30" />
+          )}
           {onToggleSelect && (
             <LibraryCardSelection
               selecting={!!selectable}
@@ -3400,7 +3416,6 @@ function CollectionFolderCard({
               label={uiText("Select folder {value1}", { value1: String(collection.name) })}
             />
           )}
-          <Folder className="w-12 h-12 sm:w-16 sm:h-16 text-primary/30" />
         </div>
         <div className="p-3 border-t border-border">
           <div className="flex items-center justify-end gap-2 mb-0.5">
@@ -3408,8 +3423,11 @@ function CollectionFolderCard({
               {uiText("{value1} models", { value1: String(collection.model_count ?? "") })}
             </span>
           </div>
-          <p className="text-sm font-bold text-foreground truncate tracking-tight">
-            {collection.name}
+          <p
+            className="text-sm font-bold text-foreground truncate tracking-tight"
+            title={collection.name}
+          >
+            {collection.display_name ?? collection.name}
           </p>
         </div>
       </div>
@@ -3480,7 +3498,7 @@ function CollectionListRow({
         </span>
         <span className="flex-1 min-w-0">
           <span className="block text-sm font-medium text-foreground truncate">
-            {collection.name}
+            {collection.display_name ?? collection.name}
           </span>
           <span className="block font-mono text-3xs text-muted-foreground truncate">
             {displayPath}
