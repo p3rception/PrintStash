@@ -140,6 +140,9 @@ class PrinterCreate(BaseModel):
     elegoo_centauri_mainboard_id: Optional[str] = Field(default=None, max_length=128)
     octoprint_url: Optional[str] = Field(default=None, max_length=512)
     octoprint_api_key: Optional[str] = Field(default=None, max_length=255)
+    flashforge_host: Optional[str] = Field(default=None, max_length=255)
+    flashforge_serial: Optional[str] = Field(default=None, max_length=128)
+    flashforge_check_code: Optional[str] = Field(default=None, max_length=255)
     model_name: Optional[str] = Field(default=None, max_length=128)
     notes: Optional[str] = Field(default=None, max_length=4096)
     group: Optional[str] = Field(default=None, max_length=128)
@@ -186,6 +189,13 @@ class PrinterCreate(BaseModel):
                 raise ValueError("octoprint_url_required")
             if not self.octoprint_api_key:
                 raise ValueError("octoprint_api_key_required")
+        if self.provider == PrinterProvider.FLASHFORGE:
+            if not self.flashforge_host:
+                raise ValueError("flashforge_host_required")
+            if not self.flashforge_serial:
+                raise ValueError("flashforge_serial_required")
+            if not self.flashforge_check_code:
+                raise ValueError("flashforge_check_code_required")
         return self
 
 
@@ -217,6 +227,9 @@ class PrinterUpdate(BaseModel):
     elegoo_centauri_mainboard_id: Optional[str] = Field(default=None, max_length=128)
     octoprint_url: Optional[str] = Field(default=None, max_length=512)
     octoprint_api_key: Optional[str] = Field(default=None, max_length=255)
+    flashforge_host: Optional[str] = Field(default=None, max_length=255)
+    flashforge_serial: Optional[str] = Field(default=None, max_length=128)
+    flashforge_check_code: Optional[str] = Field(default=None, max_length=255)
     model_name: Optional[str] = Field(default=None, max_length=128)
     notes: Optional[str] = Field(default=None, max_length=4096)
     group: Optional[str] = Field(default=None, max_length=128)
@@ -244,6 +257,9 @@ class PrinterRead(EditingBase):
     has_elegoo_centauri_access_code: bool = False
     octoprint_url: Optional[str] = None
     has_octoprint_api_key: bool = False
+    flashforge_host: Optional[str] = None
+    flashforge_serial: Optional[str] = None
+    has_flashforge_check_code: bool = False
     model_name: Optional[str] = None
     detected_model: Optional[str] = None
     capabilities: PrinterCapabilities

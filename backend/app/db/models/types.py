@@ -62,6 +62,7 @@ class PrinterProvider(str, Enum):
     PRUSALINK = "prusalink"
     ELEGOO_CENTAURI = "elegoo_centauri"
     OCTOPRINT = "octoprint"
+    FLASHFORGE = "flashforge"
 
 
 class PrintJobState(str, Enum):

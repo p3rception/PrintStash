@@ -51,6 +51,11 @@ FULL_CREDENTIALS: dict[PrinterProvider, dict[str, str]] = {
         "elegoo_centauri_host": "192.168.1.60",
         "provider_variant": "elegoo_centauri_carbon",
     },
+    PrinterProvider.FLASHFORGE: {
+        "flashforge_host": "192.168.1.70",
+        "flashforge_serial": "SNAD5X0000001",
+        "flashforge_check_code": "12345678",
+    },
 }
 
 # Sample arguments for every capability-gated provider method.

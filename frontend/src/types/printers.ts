@@ -26,7 +26,8 @@ export type PrinterProvider =
   | "bambu_lan"
   | "prusalink"
   | "elegoo_centauri"
-  | "octoprint";
+  | "octoprint"
+  | "flashforge";
 export type PrinterVariant =
   | "generic"
   | "elegoo_neptune4"
@@ -88,6 +89,9 @@ export interface PrinterRead extends EditingBase {
   has_elegoo_centauri_access_code: boolean;
   octoprint_url?: string | null;
   has_octoprint_api_key: boolean;
+  flashforge_host?: string | null;
+  flashforge_serial?: string | null;
+  has_flashforge_check_code: boolean;
   model_name?: string | null;
   detected_model?: string | null;
   capabilities: PrinterCapabilities;
@@ -200,6 +204,9 @@ export interface PrinterCreate {
   elegoo_centauri_mainboard_id?: string;
   octoprint_url?: string;
   octoprint_api_key?: string;
+  flashforge_host?: string;
+  flashforge_serial?: string;
+  flashforge_check_code?: string;
   model_name?: string;
   notes?: string;
   group?: string;
@@ -226,6 +233,9 @@ export interface PrinterUpdate {
   elegoo_centauri_mainboard_id?: string;
   octoprint_url?: string;
   octoprint_api_key?: string;
+  flashforge_host?: string;
+  flashforge_serial?: string;
+  flashforge_check_code?: string;
   model_name?: string;
   notes?: string;
   group?: string;

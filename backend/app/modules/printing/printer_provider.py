@@ -15,6 +15,7 @@ from printstash_core.printers import (
     BambuConfig,
     Capability,
     ElegooCentauriConfig,
+    FlashforgeConfig,
     MoonrakerConfig,
     OctoPrintConfig,
     PrinterClient,
@@ -26,6 +27,7 @@ from printstash_core.printers import (
     PrusaLinkConfig,
 )
 from printstash_core.printers.catalog import PROVIDER_DEFINITIONS
+from printstash_core.printers.flashforge import FlashforgeClient, FlashforgeError
 
 from app.db.models import Printer, PrinterProvider
 from app.modules.printing.bambu_adapter import BambuLanProvider
@@ -373,6 +375,22 @@ class ElegooCentauriProvider(DelegatingProvider):
         )
 
 
+@register
+class FlashforgeProvider(DelegatingProvider):
+    provider = PrinterProvider.FLASHFORGE
+    capabilities = PROVIDER_DEFINITIONS[ProviderId.FLASHFORGE].capabilities
+    client_error = FlashforgeError
+
+    @classmethod
+    def build(cls, printer: Printer) -> FlashforgeProvider:
+        _require(
+            printer, "flashforge_host", "flashforge_serial", "flashforge_check_code"
+        )
+        return cls(
+            FlashforgeClient(cast(FlashforgeConfig, printer_config_from_model(printer)))
+        )
+
+
 def capabilities_for_provider(provider: PrinterProvider) -> ProviderCapabilities:
     return PROVIDERS[provider].capabilities
 
@@ -411,6 +429,12 @@ def printer_config_from_model(printer: Printer) -> PrinterConfig:
             model=printer.provider_variant or "",
             access_code=printer.elegoo_centauri_access_code,
             mainboard_id=printer.elegoo_centauri_mainboard_id,
+        )
+    if printer.provider == PrinterProvider.FLASHFORGE:
+        return FlashforgeConfig(
+            host=printer.flashforge_host or "",
+            serial=printer.flashforge_serial or "",
+            check_code=printer.flashforge_check_code or "",
         )
     raise ProviderError("unknown_provider", code="unknown_provider")
 
@@ -451,6 +475,8 @@ class _ProductProviderFactory:
                     mainboard_id=config.mainboard_id,
                 )
             )
+        elif isinstance(config, FlashforgeConfig):
+            adapter = FlashforgeProvider(FlashforgeClient(config))
         else:  # pragma: no cover - the union is intentionally exhaustive
             raise ProviderError("unknown_provider", code="unknown_provider")
         return cast(PrinterClient, adapter)

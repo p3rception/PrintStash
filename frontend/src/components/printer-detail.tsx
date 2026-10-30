@@ -1502,7 +1502,9 @@ function PrinterSettings({
           ? "Printer access code"
           : printer.provider === "octoprint"
             ? "API key"
-            : "Moonraker API key";
+            : printer.provider === "flashforge"
+              ? "Check code"
+              : "Moonraker API key";
 
   function adopt(snapshot: PrinterRead) {
     setPrinter(snapshot);
@@ -1511,7 +1513,7 @@ function PrinterSettings({
     setGroup(snapshot.group ?? "");
     setNotes(snapshot.notes ?? "");
     setAddress(providerAddress(snapshot));
-    setSerial(snapshot.bambu_serial ?? "");
+    setSerial(snapshot.bambu_serial ?? snapshot.flashforge_serial ?? "");
     setUsername(snapshot.prusalink_username ?? "");
     setMainboardId(snapshot.elegoo_centauri_mainboard_id ?? "");
     setProviderMaterialSync(snapshot.provider_material_sync_enabled);
@@ -1558,6 +1560,10 @@ function PrinterSettings({
     } else if (printer.provider === "octoprint") {
       if (address !== providerAddress(printer)) payload.octoprint_url = address;
       if (secret) payload.octoprint_api_key = secret;
+    } else if (printer.provider === "flashforge") {
+      if (address !== providerAddress(printer)) payload.flashforge_host = address;
+      if (serial !== (printer.flashforge_serial ?? "")) payload.flashforge_serial = serial;
+      if (secret) payload.flashforge_check_code = secret;
     }
     try {
       const updated = await command.save(printer, payload, revised);
@@ -1665,7 +1671,7 @@ function PrinterSettings({
                 disabled={!canEdit || saving}
               />
             </SettingsField>
-            {printer.provider === "bambu_lan" && (
+            {(printer.provider === "bambu_lan" || printer.provider === "flashforge") && (
               <SettingsField label={uiText("Printer serial")}>
                 <Input
                   value={serial}

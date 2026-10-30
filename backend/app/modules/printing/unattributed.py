@@ -2,11 +2,38 @@
 
 from __future__ import annotations
 
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from app.db.models import (
+    File,
     FileType,
+    Model,
 )
+from app.db.scopes import live
+
+
+def artifact_for_printer_filename(
+    session: Session, filename: str
+) -> tuple[int, int] | None:
+    """Return (file_id, model_id) of the live G-code Artifact named ``filename``.
+
+    Printers report only the name a slicer uploaded, so this is a name match,
+    not proof of identical bytes. Several matches resolve to the newest upload.
+    """
+    row = session.exec(
+        select(File.id, File.model_id)
+        .join(Model, col(Model.id) == File.model_id)
+        .where(
+            File.original_filename == filename,
+            File.file_type == FileType.GCODE,
+            live(File),
+            live(Model),
+        )
+        .order_by(col(File.id).desc())
+    ).first()
+    if row is None or row[0] is None:
+        return None
+    return int(row[0]), int(row[1])
 
 
 def ensure_unattributed_artifact(session: Session) -> tuple[int, int]:

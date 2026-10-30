@@ -114,6 +114,7 @@ export const PRINTER_MODEL_OPTIONS: string[] = [
 export function providerLabel(printer: Pick<PrinterRead, "provider" | "provider_variant">): string {
   if (printer.provider === "prusalink") return "PrusaLink";
   if (printer.provider === "octoprint") return "OctoPrint";
+  if (printer.provider === "flashforge") return "Flashforge";
   if (printer.provider === "bambu_lan") return "Bambu LAN";
   if (printer.provider_variant === "elegoo_centauri_carbon_2") return "Elegoo Centauri Carbon 2";
   if (printer.provider_variant === "elegoo_centauri_carbon") return "Elegoo Centauri Carbon";
@@ -130,10 +131,12 @@ export function providerAddress(
     | "prusalink_url"
     | "elegoo_centauri_host"
     | "octoprint_url"
+    | "flashforge_host"
   >,
 ): string {
   if (printer.provider === "prusalink") return printer.prusalink_url || "PrusaLink";
   if (printer.provider === "octoprint") return printer.octoprint_url || "OctoPrint";
+  if (printer.provider === "flashforge") return printer.flashforge_host || "Flashforge";
   if (printer.provider === "bambu_lan") return printer.bambu_host || "Bambu LAN";
   if (printer.provider === "elegoo_centauri") {
     return printer.elegoo_centauri_host || "Elegoo Centauri";

@@ -191,6 +191,25 @@ PROVIDER_DEFINITIONS: Mapping[ProviderId, ProviderDefinition] = MappingProxyType
                 ConfigField("mainboard_id", ConfigValueKind.TEXT, required=False),
             ),
         ),
+        ProviderId.FLASHFORGE: ProviderDefinition(
+            provider_id=ProviderId.FLASHFORGE,
+            capabilities=_capabilities(
+                Capability.LIVE_STATUS,
+                Capability.SERVER_INFO,
+                Capability.MATERIAL_STATE,
+                support_level="beta",
+                support_notes=(
+                    "Read-only: polls the printer's local HTTP API on port 8898.",
+                    "Prints started from a slicer or the printer screen are logged when they end.",
+                    "Upload, start, pause, cancel and file inventory are not sent to the printer.",
+                ),
+            ),
+            config_fields=(
+                ConfigField("host", ConfigValueKind.HOST),
+                ConfigField("serial", ConfigValueKind.TEXT),
+                ConfigField("check_code", ConfigValueKind.SECRET),
+            ),
+        ),
     }
 )
 
@@ -234,6 +253,12 @@ SETUP_OPTIONS: tuple[SetupOption, ...] = (
         variant="elegoo_centauri_carbon_2",
         label="Elegoo Centauri Carbon 2 (beta)",
         description="Local MQTT monitoring and controls; enable LAN Only on printer first.",
+    ),
+    SetupOption(
+        kind="flashforge",
+        provider_id=ProviderId.FLASHFORGE,
+        label="Flashforge AD5X / Adventurer 5M (beta)",
+        description="Local HTTP monitoring using the serial number and check code.",
     ),
     SetupOption(
         kind="bambu_lan",

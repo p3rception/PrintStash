@@ -102,6 +102,9 @@ _PRINTER_CONNECTION_FIELDS = frozenset(
         "elegoo_centauri_mainboard_id",
         "octoprint_url",
         "octoprint_api_key",
+        "flashforge_host",
+        "flashforge_serial",
+        "flashforge_check_code",
     }
 )
 
@@ -177,6 +180,10 @@ def _validate_provider_config(p: Printer) -> None:
             raise HTTPException(status_code=400, detail="octoprint_url_required")
         if not p.octoprint_api_key:
             raise HTTPException(status_code=400, detail="octoprint_api_key_required")
+    if p.provider == PrinterProvider.FLASHFORGE:
+        for field in ("flashforge_host", "flashforge_serial", "flashforge_check_code"):
+            if not getattr(p, field):
+                raise HTTPException(status_code=400, detail=f"{field}_required")
 
 
 def _to_read(p: Printer, role: PrinterRole = PrinterRole.ADMIN) -> PrinterRead:
@@ -206,6 +213,9 @@ def _to_read(p: Printer, role: PrinterRole = PrinterRole.ADMIN) -> PrinterRead:
         ),
         octoprint_url=p.octoprint_url if can_admin else None,
         has_octoprint_api_key=bool(p.octoprint_api_key) if can_admin else False,
+        flashforge_host=p.flashforge_host if can_admin else None,
+        flashforge_serial=p.flashforge_serial,
+        has_flashforge_check_code=bool(p.flashforge_check_code) if can_admin else False,
         model_name=p.model_name,
         detected_model=p.detected_model,
         capabilities=PrinterCapabilities(**caps.as_api_dict()),
@@ -621,6 +631,9 @@ async def create_printer(
         elegoo_centauri_mainboard_id=payload.elegoo_centauri_mainboard_id or None,
         octoprint_url=(payload.octoprint_url or "").strip().rstrip("/") or None,
         octoprint_api_key=payload.octoprint_api_key or None,
+        flashforge_host=(payload.flashforge_host or "").strip() or None,
+        flashforge_serial=(payload.flashforge_serial or "").strip() or None,
+        flashforge_check_code=(payload.flashforge_check_code or "").strip() or None,
         model_name=payload.model_name.strip() if payload.model_name else None,
         notes=payload.notes,
         group=payload.group.strip() if payload.group else None,
@@ -695,6 +708,12 @@ async def update_printer(
         p.octoprint_url = payload.octoprint_url.strip().rstrip("/") or None
     if payload.octoprint_api_key is not None:
         p.octoprint_api_key = payload.octoprint_api_key or None
+    if payload.flashforge_host is not None:
+        p.flashforge_host = payload.flashforge_host.strip() or None
+    if payload.flashforge_serial is not None:
+        p.flashforge_serial = payload.flashforge_serial.strip() or None
+    if payload.flashforge_check_code is not None:
+        p.flashforge_check_code = payload.flashforge_check_code.strip() or None
     if payload.model_name is not None:
         p.model_name = payload.model_name.strip() or None
     if payload.notes is not None:

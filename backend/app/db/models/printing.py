@@ -155,6 +155,11 @@ class Printer(SQLModel, table=True):
     octoprint_api_key: Optional[str] = Field(
         default=None, sa_column=Column(EncryptedText(), nullable=True)
     )
+    flashforge_host: Optional[str] = Field(default=None, max_length=255)
+    flashforge_serial: Optional[str] = Field(default=None, max_length=128)
+    flashforge_check_code: Optional[str] = Field(
+        default=None, sa_column=Column(EncryptedText(), nullable=True)
+    )
     # Hardware model label shown on the printer card. ``model_name`` is a
     # user-set override; ``detected_model`` is a best-effort guess from
     # provider_variant/bambu_serial, recomputed on create/update. Display

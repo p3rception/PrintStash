@@ -98,6 +98,7 @@ function makePrinter(overrides: Partial<PrinterRead> = {}): PrinterRead {
     has_prusalink_api_key: false,
     has_elegoo_centauri_access_code: false,
     has_octoprint_api_key: false,
+    has_flashforge_check_code: false,
     has_api_key: false,
     access: { role: "admin", can_view: true, can_print: true, can_control: true, can_admin: true },
     capabilities: {

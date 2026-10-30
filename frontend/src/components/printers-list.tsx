@@ -812,6 +812,8 @@ function AddPrinterModal({ onClose, onCreated }: { onClose: () => void; onCreate
   const [prusaUsername, setPrusaUsername] = useState("maker");
   const [prusaSecret, setPrusaSecret] = useState("");
   const [octoprintApiKey, setOctoprintApiKey] = useState("");
+  const [flashforgeSerial, setFlashforgeSerial] = useState("");
+  const [flashforgeCheckCode, setFlashforgeCheckCode] = useState("");
   const [centauriAccessCode, setCentauriAccessCode] = useState("");
   const [centauriMainboardId, setCentauriMainboardId] = useState("");
   const [notes, setNotes] = useState("");
@@ -862,6 +864,10 @@ function AddPrinterModal({ onClose, onCreated }: { onClose: () => void; onCreate
       } else if (setupKind === "octoprint") {
         payload.octoprint_url = url.trim();
         payload.octoprint_api_key = octoprintApiKey;
+      } else if (setupKind === "flashforge") {
+        payload.flashforge_host = url.trim();
+        payload.flashforge_serial = flashforgeSerial.trim();
+        payload.flashforge_check_code = flashforgeCheckCode.trim();
       }
       await createPrinter(payload);
       toast.success(uiText('Printer "{value1}" added', { value1: String(name.trim()) }));
@@ -1069,6 +1075,41 @@ function AddPrinterModal({ onClose, onCreated }: { onClose: () => void; onCreate
                   type="password"
                   value={prusaSecret}
                   onChange={(e) => setPrusaSecret(e.target.value)}
+                  required
+                  className="w-full bg-background text-foreground text-sm border border-border rounded px-3 py-[7px]"
+                />
+              </div>
+            </>
+          )}
+          {setupKind === "flashforge" && (
+            <>
+              <div>
+                <label
+                  htmlFor="flashforge-serial"
+                  className="block text-xs text-muted-foreground tracking-wider uppercase mb-1.5"
+                >
+                  {uiText("Printer serial")}
+                </label>
+                <input
+                  id="flashforge-serial"
+                  value={flashforgeSerial}
+                  onChange={(e) => setFlashforgeSerial(e.target.value)}
+                  required
+                  className="w-full bg-background text-foreground text-sm border border-border rounded px-3 py-[7px]"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="flashforge-check-code"
+                  className="block text-xs text-muted-foreground tracking-wider uppercase mb-1.5"
+                >
+                  {uiText("Check code")}
+                </label>
+                <input
+                  id="flashforge-check-code"
+                  type="password"
+                  value={flashforgeCheckCode}
+                  onChange={(e) => setFlashforgeCheckCode(e.target.value)}
                   required
                   className="w-full bg-background text-foreground text-sm border border-border rounded px-3 py-[7px]"
                 />

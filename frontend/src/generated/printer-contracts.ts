@@ -250,6 +250,41 @@ export const SHARED_PRINTER_CONTRACT = {
           "choices": []
         }
       ]
+    },
+    "flashforge": {
+      "capabilities": [
+        "live_status",
+        "server_info",
+        "material_state"
+      ],
+      "supportLevel": "beta",
+      "supportNotes": [
+        "Read-only: polls the printer's local HTTP API on port 8898.",
+        "Prints started from a slicer or the printer screen are logged when they end.",
+        "Upload, start, pause, cancel and file inventory are not sent to the printer."
+      ],
+      "requiresReadyBeforeSend": false,
+      "acceptedPrintFormats": [],
+      "configFields": [
+        {
+          "name": "host",
+          "kind": "host",
+          "required": true,
+          "choices": []
+        },
+        {
+          "name": "serial",
+          "kind": "text",
+          "required": true,
+          "choices": []
+        },
+        {
+          "name": "check_code",
+          "kind": "secret",
+          "required": true,
+          "choices": []
+        }
+      ]
     }
   },
   "setupOptions": [
@@ -294,6 +329,13 @@ export const SHARED_PRINTER_CONTRACT = {
       "variant": "elegoo_centauri_carbon_2",
       "label": "Elegoo Centauri Carbon 2 (beta)",
       "description": "Local MQTT monitoring and controls; enable LAN Only on printer first."
+    },
+    {
+      "value": "flashforge",
+      "provider": "flashforge",
+      "variant": null,
+      "label": "Flashforge AD5X / Adventurer 5M (beta)",
+      "description": "Local HTTP monitoring using the serial number and check code."
     },
     {
       "value": "bambu_lan",

@@ -17,6 +17,7 @@ class ProviderId(StrEnum):
     PRUSALINK = "prusalink"
     ELEGOO_CENTAURI = "elegoo_centauri"
     OCTOPRINT = "octoprint"
+    FLASHFORGE = "flashforge"
 
 
 class Capability(StrEnum):
@@ -275,12 +276,25 @@ class ElegooCentauriConfig:
             _require_values(self.access_code)
 
 
+@dataclass(frozen=True)
+class FlashforgeConfig:
+    host: str
+    serial: str
+    check_code: str
+
+    provider_id: ClassVar[ProviderId] = ProviderId.FLASHFORGE
+
+    def __post_init__(self) -> None:
+        _require_values(self.host, self.serial, self.check_code)
+
+
 PrinterConfig: TypeAlias = (
     MoonrakerConfig
     | BambuConfig
     | PrusaLinkConfig
     | OctoPrintConfig
     | ElegooCentauriConfig
+    | FlashforgeConfig
 )
 
 

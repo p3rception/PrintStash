@@ -94,6 +94,7 @@ class TestProviderId:
             "prusalink",
             "elegoo_centauri",
             "octoprint",
+            "flashforge",
         ]
 
 

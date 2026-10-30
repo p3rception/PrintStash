@@ -66,6 +66,7 @@ const EXPECTED_SETUP_CATALOG: readonly SetupCatalogRow[] = [
     "elegoo_centauri_carbon_2",
     "Elegoo Centauri Carbon 2",
   ],
+  ["flashforge", "Flashforge AD5X / Adventurer 5M (beta)", "flashforge", null, "Flashforge"],
   ["bambu_lan", "Bambu LAN (beta)", "bambu_lan", null, "Bambu LAN"],
 ];
 
@@ -139,6 +140,7 @@ describe("PRINTER_SETUP_OPTIONS", () => {
       "prusalink",
       "elegoo_centauri",
       "octoprint",
+      "flashforge",
     ] satisfies PrinterProvider[];
 
     const mappedProviders = new Set(

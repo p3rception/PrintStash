@@ -59,7 +59,7 @@ from app.runtime.maintenance import (
 )
 from app.runtime.realtime import InProcessBus, MessageSink, RealtimeBus
 
-from .unattributed import ensure_unattributed_artifact
+from .unattributed import artifact_for_printer_filename, ensure_unattributed_artifact
 
 logger = get_logger(__name__)
 
@@ -988,13 +988,13 @@ class PrinterHub:
                     "cancelled",
                     "error",
                 ):
-                    sentinel_file_id, sentinel_model_id = ensure_unattributed_artifact(
-                        session
-                    )
+                    external_file_id, external_model_id = artifact_for_printer_filename(
+                        session, filename
+                    ) or ensure_unattributed_artifact(session)
                     job = PrintJob(
                         printer_id=printer_id,
-                        file_id=sentinel_file_id,
-                        model_id=sentinel_model_id,
+                        file_id=external_file_id,
+                        model_id=external_model_id,
                         remote_filename=filename,
                         source="external",
                         provider_job_id=provider_job_id,
@@ -1149,6 +1149,11 @@ class PrinterHub:
                         ),
                         density_g_cm3=linked.density_g_cm3 if linked else None,
                     )
+                # A provider that knows the slicer's own weight estimate reports
+                # it directly; that beats a density guess from the material.
+                reported_g = _reported_float(print_stats.get("filament_used_g"))
+                if reported_g:
+                    job.filament_used_g = reported_g
                 if new_state == PrintJobState.COMPLETED:
                     (
                         job.filament_g_effective,

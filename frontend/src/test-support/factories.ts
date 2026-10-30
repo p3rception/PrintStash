@@ -136,6 +136,7 @@ export function aPrinter(override?: Partial<PrinterRead>): PrinterRead {
     has_prusalink_api_key: false,
     has_elegoo_centauri_access_code: false,
     has_octoprint_api_key: false,
+    has_flashforge_check_code: false,
     has_api_key: false,
     capabilities: printerCapabilities(),
     access: printerAccess(),

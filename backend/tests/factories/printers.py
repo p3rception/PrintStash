@@ -70,6 +70,11 @@ _PROVIDER_FIELDS: dict[PrinterProvider, dict[str, Any]] = {
         "octoprint_url": "http://printer.invalid",
         "octoprint_api_key": "not-a-real-api-key",
     },
+    PrinterProvider.FLASHFORGE: {
+        "flashforge_host": "printer.invalid",
+        "flashforge_serial": "FAKESERIAL0001",
+        "flashforge_check_code": "00000000",
+    },
 }
 
 

@@ -100,6 +100,7 @@ export function PrinterSettingsReview({
                       : latest.has_prusalink_password,
                   elegoo_centauri: latest.has_elegoo_centauri_access_code,
                   octoprint: latest.has_octoprint_api_key,
+                  flashforge: latest.has_flashforge_check_code,
                 }[latest.provider]
                   ? "Configured"
                   : "Not configured",
