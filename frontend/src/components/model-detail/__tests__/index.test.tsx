@@ -453,6 +453,46 @@ describe("ModelDetail", () => {
     });
   });
 
+  // `source_url` can hold anything an older release stored, so a `javascript:` URL
+  // reaching this href would be stored XSS. See source-url.test.ts for the rules.
+  describe("source link", () => {
+    it("opens a normalized safe source URL from the header", async () => {
+      renderDetail({ model: aModel({ source_url: "HTTPS://WWW.EXAMPLE.TEST/cube" }) });
+
+      expect(await screen.findByRole("link", { name: "example.test" })).toHaveAttribute(
+        "href",
+        "https://www.example.test/cube",
+      );
+    });
+
+    it("does not link an unsafe source URL", async () => {
+      renderDetail({ model: aModel({ source_url: "https://user:secret@example.test/cube" }) });
+
+      await screen.findByRole("heading", { name: "Benchy", level: 1 });
+      expect(screen.queryByRole("link", { name: /example\.test/ })).toBeNull();
+    });
+
+    it("saves a pasted link without touching the other fields", async () => {
+      const user = userEvent.setup();
+      const app = renderDetail({
+        routes: {
+          "PATCH /api/v1/models/1": json(
+            aModel({ source_url: "https://example.test/cube", edit_version: 2 }),
+          ),
+        },
+      });
+
+      await user.click(await screen.findByRole("button", { name: "Add source link" }));
+      await user.paste("https://example.test/cube");
+      await user.keyboard("{Enter}");
+
+      expect(await screen.findByRole("link", { name: "example.test" })).toBeVisible();
+      expect(JSON.parse(app.requestsWithMethod("PATCH")[0].body ?? "{}")).toEqual({
+        source_url: "https://example.test/cube",
+      });
+    });
+  });
+
   it("keeps mesh overlays hidden while the preview is unavailable", async () => {
     const user = userEvent.setup();
     renderDetail({

@@ -3,14 +3,13 @@
 import { uiText } from "@/lib/locale";
 import { useUiLocale } from "@/lib/i18n";
 
-import { ChevronDown, ExternalLink, Plus, Trash2, X } from "lucide-react";
+import { ChevronDown, Plus, Trash2, X } from "lucide-react";
 
 import { FileRead, FileRevisionUpdate, ModelRead, TagRead } from "@/types";
 
 import { CollectionPicker } from "@/components/collection-picker";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { useComboboxNav } from "@/lib/use-combobox-nav";
-import { safeHttpUrl } from "./source-url";
 
 import { RecommendedPrintCard } from "./recommended-print-card";
 import { Localized } from "@/components/ui/localized";
@@ -64,7 +63,6 @@ export function OverviewTab({
   onAddRevision: () => void;
 }) {
   useUiLocale();
-  const sourceUrl = model.source_url ? safeHttpUrl(model.source_url) : null;
   const tagShown = editor.filteredTags.slice(0, 6);
   const tagItems = [...tagShown, ...(editor.canCreate ? [editor.tagInput.trim()] : [])];
   const tagNav = useComboboxNav(editor.tagInput ? tagItems.length : 0, {
@@ -278,17 +276,6 @@ export function OverviewTab({
           </div>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {sourceUrl && (
-              <a
-                href={sourceUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 bg-surface-container text-on-surface px-3 py-1 rounded font-mono text-xs uppercase tracking-wider hover:text-primary transition-colors"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-                {uiText("Source model")}
-              </a>
-            )}
             {model.collection_label && (
               <span className="min-w-0 max-w-full wrap-anywhere bg-surface-container text-on-surface px-3 py-1 rounded font-mono text-xs tracking-wider">
                 {model.collection_label}

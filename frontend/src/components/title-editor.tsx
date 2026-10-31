@@ -17,13 +17,16 @@ interface TitleEditorProps {
   onValueChange: (value: string) => void;
   onSave: () => void;
   busy: boolean;
-  requiredMessage: string;
+  /** Omit to let the field be saved empty. */
+  requiredMessage?: string;
+  placeholder?: string;
+  align?: "start" | "end";
   maxLength?: number;
   saveDisabled?: boolean;
   children?: ReactNode;
 }
 
-/** One anchored name editor for Model and Collection headings, with no page reflow. */
+/** One anchored single-field editor for Model and Collection headers, with no page reflow. */
 export function TitleEditor({
   open,
   onOpenChange,
@@ -35,13 +38,15 @@ export function TitleEditor({
   onSave,
   busy,
   requiredMessage,
+  placeholder,
+  align = "start",
   maxLength,
   saveDisabled = false,
   children,
 }: TitleEditorProps) {
   const inputId = useId();
   const errorId = useId();
-  const empty = !value.trim();
+  const empty = !!requiredMessage && !value.trim();
   // The shared dropdown attaches its portal after the opening render.
   const focusInput = useCallback((input: HTMLInputElement | null) => {
     input?.focus();
@@ -58,7 +63,7 @@ export function TitleEditor({
       role="dialog"
       aria-label={label}
       portal
-      align="start"
+      align={align}
       className="min-w-0"
       contentClassName="w-96 rounded-md border border-border bg-popover p-3 text-popover-foreground shadow-lg"
     >
@@ -79,6 +84,7 @@ export function TitleEditor({
             value={value}
             onChange={(event) => onValueChange(event.target.value)}
             disabled={busy}
+            placeholder={placeholder}
             maxLength={maxLength}
             aria-invalid={empty}
             aria-describedby={empty ? errorId : undefined}

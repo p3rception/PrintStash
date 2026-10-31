@@ -19,6 +19,7 @@ import { ApiError } from "@/lib/errors";
 import { getSessionVersion, requireSessionVersion } from "@/lib/session-transport";
 import { Modal } from "@/components/ui/modal";
 import { TitleEditor } from "@/components/title-editor";
+import { safeHttpUrl } from "@/components/model-detail/source-url";
 import { FileHashes } from "./file-hashes";
 import { ModelSearchAction } from "@/components/model-search-action";
 
@@ -34,6 +35,7 @@ import {
   ArrowLeft,
   Check,
   FileText,
+  ExternalLink,
   Link2,
   Loader2,
   MoreHorizontal,
@@ -194,9 +196,10 @@ function ModelDetailPresentation({
   const auth = useRequireAuth();
   const { user } = useAuth();
   const [deleting, setDeleting] = useState(false);
-  const [editMode, setEditMode] = useState<"details" | "name" | null>(null);
+  const [editMode, setEditMode] = useState<"details" | "name" | "source" | null>(null);
   const editing = editMode === "details";
   const renaming = editMode === "name";
+  const editingSource = editMode === "source";
   const editLifetime = useRef(0);
   useEffect(
     () => () => {
@@ -378,7 +381,7 @@ function ModelDetailPresentation({
     }
   }
 
-  function enterEdit(mode: "details" | "name" = "details") {
+  function enterEdit(mode: "details" | "name" | "source" = "details") {
     if (saving || mode === editMode) return;
     editLifetime.current += 1;
     setEditBase(captureEditingBase(model));
@@ -419,13 +422,15 @@ function ModelDetailPresentation({
         model.id,
         renaming
           ? { name: editName.trim() }
-          : {
-              name: editName.trim() || undefined,
-              description: editDescription.trim() || null,
-              source_url: editSourceUrl.trim() || null,
-              collection: editCollection,
-              tags: editTags,
-            },
+          : editingSource
+            ? { source_url: editSourceUrl.trim() || null }
+            : {
+                name: editName.trim() || undefined,
+                description: editDescription.trim() || null,
+                source_url: editSourceUrl.trim() || null,
+                collection: editCollection,
+                tags: editTags,
+              },
         version,
       );
       requireSessionVersion(session);
@@ -628,6 +633,67 @@ function ModelDetailPresentation({
     setAddRevisionOpen(true);
   }
 
+  const sourceLink = model.source_url ? safeHttpUrl(model.source_url) : null;
+  const canEditSource = auth.isAuthenticated && canEditModel;
+  const sourceUrlInvalid = !!editSourceUrl.trim() && !safeHttpUrl(editSourceUrl.trim());
+  const editConflict = editProblem && (
+    <div className="space-y-2 border-t border-border pt-3 text-xs">
+      <p role="alert">
+        {uiText(editProblem === "conflict" ? "library.editConflict" : "library.saveUnconfirmed")}
+      </p>
+      {reviewedModel ? (
+        <>
+          <p className="font-medium">{uiText("library.latestVersion")}</p>
+          <p className="break-words">
+            {editingSource ? (reviewedModel.source_url ?? "—") : reviewedModel.name}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={useReviewedVersion}
+              disabled={saving}
+            >
+              {uiText("library.useLatest")}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setReviewedModel(null)}
+              disabled={saving}
+            >
+              {uiText("library.keepDraft")}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="h-auto min-h-9 whitespace-normal"
+              loading={saving}
+              disabled={
+                reviewedModel.effective_role !== "edit" && reviewedModel.effective_role !== "admin"
+              }
+              onClick={() => void saveEdit(reviewedModel)}
+            >
+              {uiText("library.retryDraft")}
+            </Button>
+          </div>
+        </>
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => void reviewLatest()}
+          loading={reviewing}
+        >
+          {uiText("library.reviewLatest")}
+        </Button>
+      )}
+    </div>
+  );
+
   return (
     <Localized>
       <div className="flex flex-col h-full">
@@ -819,66 +885,7 @@ function ModelDetailPresentation({
                     </div>
                   }
                 >
-                  {renaming && editProblem && (
-                    <div className="space-y-2 border-t border-border pt-3 text-xs">
-                      <p role="alert">
-                        {uiText(
-                          editProblem === "conflict"
-                            ? "library.editConflict"
-                            : "library.saveUnconfirmed",
-                        )}
-                      </p>
-                      {reviewedModel ? (
-                        <>
-                          <p className="font-medium">{uiText("library.latestVersion")}</p>
-                          <p className="break-words">{reviewedModel.name}</p>
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={useReviewedVersion}
-                              disabled={saving}
-                            >
-                              {uiText("library.useLatest")}
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setReviewedModel(null)}
-                              disabled={saving}
-                            >
-                              {uiText("library.keepDraft")}
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              className="h-auto min-h-9 whitespace-normal"
-                              loading={saving}
-                              disabled={
-                                reviewedModel.effective_role !== "edit" &&
-                                reviewedModel.effective_role !== "admin"
-                              }
-                              onClick={() => void saveEdit(reviewedModel)}
-                            >
-                              {uiText("library.retryDraft")}
-                            </Button>
-                          </div>
-                        </>
-                      ) : (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => void reviewLatest()}
-                          loading={reviewing}
-                        >
-                          {uiText("library.reviewLatest")}
-                        </Button>
-                      )}
-                    </div>
-                  )}
+                  {editConflict}
                 </TitleEditor>
               )}
               <span className="font-mono text-xs text-on-surface-variant">
@@ -928,7 +935,7 @@ function ModelDetailPresentation({
             </div>
           </div>
           <div
-            className={`flex items-center gap-2 ${editing ? "w-full justify-end md:w-auto md:self-start" : ""}`}
+            className={`flex flex-wrap items-center gap-2 ${editing ? "w-full justify-end md:w-auto md:self-start" : ""}`}
           >
             {editing ? (
               <>
@@ -947,6 +954,81 @@ function ModelDetailPresentation({
               </>
             ) : (
               <>
+                {(sourceLink || canEditSource) && (
+                  <TitleEditor
+                    open={editingSource && canEditSource}
+                    onOpenChange={(open) => {
+                      if (!open) cancelEdit();
+                    }}
+                    label={uiText("Source URL")}
+                    fieldLabel={uiText("Source URL")}
+                    value={editSourceUrl}
+                    onValueChange={setEditSourceUrl}
+                    onSave={() => void saveEdit()}
+                    busy={saving}
+                    placeholder="https://www.printables.com/model/..."
+                    align="end"
+                    maxLength={2048}
+                    saveDisabled={sourceUrlInvalid || editProblem !== null || !canEditModel}
+                    trigger={
+                      <div className="flex items-center gap-2">
+                        {sourceLink && (
+                          <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            className="border-primary text-primary"
+                          >
+                            <a
+                              href={sourceLink}
+                              target="_blank"
+                              rel="noreferrer"
+                              title={sourceLink}
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                              <span className="max-w-48 truncate">
+                                {new URL(sourceLink).hostname.replace(/^www\./, "")}
+                              </span>
+                            </a>
+                          </Button>
+                        )}
+                        {canEditSource && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size={sourceLink ? "icon-sm" : "sm"}
+                            aria-label={uiText(sourceLink ? "Edit source link" : "Add source link")}
+                            title={sourceLink ? uiText("Edit source link") : undefined}
+                            onClick={() => {
+                              if (saving) return;
+                              if (editingSource) cancelEdit();
+                              else enterEdit("source");
+                            }}
+                            data-menu-trigger
+                            aria-haspopup="dialog"
+                            aria-expanded={editingSource}
+                          >
+                            {sourceLink ? (
+                              <Pencil className="h-3.5 w-3.5" aria-hidden />
+                            ) : (
+                              <>
+                                <Link2 className="h-4 w-4" aria-hidden />
+                                {uiText("Add source link")}
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    }
+                  >
+                    {sourceUrlInvalid && (
+                      <p role="alert" className="text-xs text-destructive">
+                        {uiText("Enter a full link starting with https://")}
+                      </p>
+                    )}
+                    {editConflict}
+                  </TitleEditor>
+                )}
                 {canEditModel && (
                   <Button
                     type="button"
