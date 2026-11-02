@@ -80,12 +80,12 @@ def list_items(
     if rank is not None:
         stmt = stmt.order_by(rank.desc())
 
-    # Model.id is the stable tiebreaker: without it, models sharing an
-    # updated_at (e.g. a batch ZIP import) sort non-deterministically, so
+    # Model.id is the stable tiebreaker: without it, models sharing a
+    # created_at (e.g. a batch ZIP import) sort non-deterministically, so
     # pagination can repeat or skip rows across page boundaries.
     stmt = (
         stmt.options(lazyload(Model.tags))
-        .order_by(Model.updated_at.desc(), Model.id.desc())  # type: ignore[attr-defined]
+        .order_by(Model.created_at.desc(), Model.id.desc())  # type: ignore[attr-defined]
         .offset(offset)
         .limit(limit)
     )

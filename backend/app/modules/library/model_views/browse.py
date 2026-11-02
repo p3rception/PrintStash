@@ -258,7 +258,7 @@ def _source(session: Session, user: User, query: BrowseQuery):
     elif query.sort in (ModelSort.DATE_ASC, ModelSort.DATE_DESC) or (
         query.sort is ModelSort.RELEVANCE and rank is None
     ):
-        group_value = col(MultipartModel.updated_at)
+        group_value = col(MultipartModel.created_at)
     else:
         group_value = cast(
             literal(None), value.type if value.type is not None else Float

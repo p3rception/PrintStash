@@ -1,7 +1,7 @@
 """Paginating the library and the trash without dropping or repeating a row.
 
 Ties are the normal case here, not the corner: a batch ZIP import stamps every model with
-the same `updated_at`, and a bulk trash shares one `deleted_at`. Sorting on that column
+the same `created_at`, and a bulk trash shares one `deleted_at`. Sorting on that column
 alone leaves the database free to order tied rows differently on each query, so page two
 can repeat a row page one already showed and skip one it never did. The id tiebreaker is
 what makes the order total, and these tests walk every page and check the set.
@@ -51,7 +51,7 @@ def _make_models(db_session: Session, *, count: int, ts: datetime) -> list[int]:
             name=f"Model {i:02d}",
             slug=f"model-{i:02d}",
             hash=f"{i:064d}",
-            updated_at=ts,
+            created_at=ts,
         )
         ids.append(m.id)
     return ids

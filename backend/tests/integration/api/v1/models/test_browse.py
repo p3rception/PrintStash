@@ -248,9 +248,11 @@ class TestBrowseModels:
     def test_globally_orders_dates(
         self, client, auth_headers, make_model, make_multipart_model, sort, names
     ):
-        make_model("Old", updated_at=datetime(2025, 1, 1))
-        make_multipart_model("Middle", updated_at=datetime(2025, 6, 1))
-        make_model("New", updated_at=datetime(2026, 1, 1))
+        make_model(
+            "Old", created_at=datetime(2025, 1, 1), updated_at=datetime(2026, 2, 1)
+        )
+        make_multipart_model("Middle", created_at=datetime(2025, 6, 1))
+        make_model("New", created_at=datetime(2026, 1, 1))
 
         response = client.get(BROWSE, params={"sort": sort}, headers=auth_headers)
 

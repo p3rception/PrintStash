@@ -87,9 +87,12 @@ def _latest_gcode_metadata():
 
 def _sort_value_and_statement(stmt, sort: ModelSort, rank=None):
     if sort == ModelSort.RELEVANCE:
-        return stmt, rank if rank is not None else Model.updated_at
+        return stmt, rank if rank is not None else Model.created_at
     if sort in (ModelSort.DATE_DESC, ModelSort.DATE_ASC):
-        return stmt, Model.updated_at
+        # Not updated_at: a library rescan bumps it, so moving a folder of
+        # files would reshuffle them all to the top in scan order.
+        # ponytail: unindexed, add (deleted_at, created_at, id) for a big library.
+        return stmt, Model.created_at
     if sort in (ModelSort.NAME_ASC, ModelSort.NAME_DESC):
         return stmt, func.lower(Model.name)
     if sort == ModelSort.FILAMENT_ASC:
