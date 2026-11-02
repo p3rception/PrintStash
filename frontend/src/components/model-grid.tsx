@@ -971,6 +971,21 @@ export function ModelBrowser({ initial }: { initial?: BrowserInitialData }) {
     const isMain = (item: LibraryItem) => item.kind === "model" && item.value.is_main === true;
     return [...items.filter(isMain), ...items.filter((item) => !isMain(item))];
   }, [modelQuery.data, selectedCollection]);
+  const orderedFolders = useMemo(() => {
+    const folders = folderPages.data?.pages.flatMap((page) => page.items) ?? [];
+    if (searchQuery !== undefined) return folders;
+    if (sortKey === "name-desc") return folders.toReversed();
+    if (sortKey !== "date-desc" && sortKey !== "date-asc") return folders;
+    // ponytail: across loaded pages only, a server sort once a level tops 200 folders.
+    const added = (at: string) => Date.parse(at) * (sortKey === "date-desc" ? -1 : 1);
+    const dated = folders.flatMap((folder) =>
+      folder.latest_model_at ? [{ folder, at: added(folder.latest_model_at) }] : [],
+    );
+    return [
+      ...dated.sort((a, b) => a.at - b.at).map(({ folder }) => folder),
+      ...folders.filter((folder) => !folder.latest_model_at),
+    ];
+  }, [folderPages.data, searchQuery, sortKey]);
   // A filter lists matching Models from the whole subtree, so the open folder's
   // subfolders are not part of that result: showing them beside it mixes a
   // place to browse with a list of matches.
@@ -985,9 +1000,7 @@ export function ModelBrowser({ initial }: { initial?: BrowserInitialData }) {
       items: orderedItems,
       modelPages: modelQuery.data?.pages.length ?? 0,
       folderPages: foldersHidden ? 0 : (folderPages.data?.pages.length ?? 0),
-      collections: foldersHidden
-        ? []
-        : (folderPages.data?.pages.flatMap((page) => page.items) ?? []),
+      collections: foldersHidden ? [] : orderedFolders,
       collection: selectedCollectionRow,
       breadcrumbs:
         selectedCollectionRow && selectedLookup.data
@@ -1001,6 +1014,7 @@ export function ModelBrowser({ initial }: { initial?: BrowserInitialData }) {
     entry,
     orderedItems,
     foldersHidden,
+    orderedFolders,
     folderPages.data,
     folderPages.hasNextPage,
     selectedCollectionRow,
@@ -1840,7 +1854,7 @@ export function ModelBrowser({ initial }: { initial?: BrowserInitialData }) {
     searchParams.has("uploaded_after") ||
     searchParams.has("uploaded_before") ||
     historyKeys.some((key) => searchParams.has(key));
-  const displayCount = libraryItems.length;
+  const displayCount = visibleCollections.length + libraryItems.length;
   // Links belong to the displayed result even while another destination loads.
   const currentLibraryHref = snapshot?.entry.href ?? canonicalLibraryHref;
   // While searching, the grid is a global result list, not a folder view: show
@@ -2028,6 +2042,7 @@ export function ModelBrowser({ initial }: { initial?: BrowserInitialData }) {
       "printer_model",
       "revision_status",
       "print_outcome",
+      "recipient",
       "storage",
       "printed",
       "has_similar_candidates",

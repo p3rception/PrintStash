@@ -497,6 +497,16 @@ export function PrintHistorySection({
                       {uiText("spool · {value1}", { value1: String(job.spool_name ?? "") })}
                     </p>
                   )}
+                  {job.recipient && (
+                    <p className="font-mono text-2xs text-on-surface-variant">
+                      {uiText("for {value1}", { value1: job.recipient })}
+                    </p>
+                  )}
+                  {job.notes && (
+                    <p className="text-xs italic text-on-surface-variant break-words">
+                      {job.notes}
+                    </p>
+                  )}
                   {job.error && (
                     <p className="font-mono text-2xs text-error break-words">{job.error}</p>
                   )}

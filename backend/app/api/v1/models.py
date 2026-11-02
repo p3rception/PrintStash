@@ -298,6 +298,7 @@ def list_models(
     revision_status: Optional[List[FileRevisionStatus]] = Query(None),
     printed: Optional[bool] = Query(None),
     print_outcome: Optional[List[PrintJobState]] = Query(None),
+    recipient: Optional[List[str]] = Query(None),
     storage_filter: Optional[List[Literal["vault", "external"]]] = Query(
         None, alias="storage"
     ),
@@ -332,6 +333,7 @@ def list_models(
         revision_status=revision_status or [],
         printed=printed,
         print_outcome=print_outcome or [],
+        recipient=recipient or [],
         storage=storage_filter or [],
         uploaded_after=uploaded_after,
         uploaded_before=uploaded_before,
@@ -406,6 +408,7 @@ def page_models(
     revision_status: Optional[List[FileRevisionStatus]] = Query(None),
     printed: Optional[bool] = Query(None),
     print_outcome: Optional[List[PrintJobState]] = Query(None),
+    recipient: Optional[List[str]] = Query(None),
     storage_filter: Optional[List[Literal["vault", "external"]]] = Query(
         None, alias="storage"
     ),
@@ -441,6 +444,7 @@ def page_models(
         revision_status=revision_status or [],
         printed=printed,
         print_outcome=print_outcome or [],
+        recipient=recipient or [],
         storage=storage_filter or [],
         uploaded_after=uploaded_after,
         uploaded_before=uploaded_before,
@@ -482,6 +486,7 @@ def outliner_models(
     revision_status: Optional[List[FileRevisionStatus]] = Query(None),
     printed: Optional[bool] = Query(None),
     print_outcome: Optional[List[PrintJobState]] = Query(None),
+    recipient: Optional[List[str]] = Query(None),
     storage_filter: Optional[List[Literal["vault", "external"]]] = Query(
         None, alias="storage"
     ),
@@ -515,6 +520,7 @@ def outliner_models(
             revision_status=revision_status or [],
             printed=printed,
             print_outcome=print_outcome or [],
+            recipient=recipient or [],
             storage=storage_filter or [],
             uploaded_after=uploaded_after,
             uploaded_before=uploaded_before,
@@ -544,6 +550,7 @@ def model_facets(
     revision_status: Optional[List[FileRevisionStatus]] = Query(None),
     printed: Optional[bool] = Query(None),
     print_outcome: Optional[List[PrintJobState]] = Query(None),
+    recipient: Optional[List[str]] = Query(None),
     storage_filter: Optional[List[Literal["vault", "external"]]] = Query(
         None, alias="storage"
     ),
@@ -579,6 +586,7 @@ def model_facets(
             revision_status=revision_status or [],
             printed=printed,
             print_outcome=print_outcome or [],
+            recipient=recipient or [],
             storage=storage_filter or [],
             uploaded_after=uploaded_after,
             uploaded_before=uploaded_before,

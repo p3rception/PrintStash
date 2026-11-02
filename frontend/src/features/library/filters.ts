@@ -10,6 +10,7 @@ export const structuredLibraryFilterKeys = [
   "printer_model",
   "revision_status",
   "print_outcome",
+  "recipient",
   "storage",
   "printed",
   "has_similar_candidates",
@@ -24,6 +25,7 @@ const structuredLibraryFilterLabels = {
   printer_model: "Printer model",
   revision_status: "Revision",
   print_outcome: "Print outcome",
+  recipient: "For",
   storage: "Storage",
   printed: "Printed",
   has_similar_candidates: "similarity.hasCandidates",
@@ -40,6 +42,7 @@ const arrayKeys = [
   "printer_model",
   "revision_status",
   "print_outcome",
+  "recipient",
   "storage",
 ] as const;
 
@@ -121,6 +124,7 @@ export function readLibraryFilters(
       "cancelled",
       "failed",
     ] as const),
+    recipient: source.getAll("recipient"),
     storage: accepted(source, "storage", ["vault", "external"] as const),
     printed: printed === null ? [] : [printed ? "yes" : "no"],
     has_similar_candidates: similar === null ? [] : [similar ? "yes" : "no"],

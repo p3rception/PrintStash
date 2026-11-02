@@ -57,6 +57,7 @@ export function modelListSearch(params?: ListModelsParams): URLSearchParams {
     "printer_model",
     "revision_status",
     "print_outcome",
+    "recipient",
     "storage",
   ] as const) {
     for (const value of params?.[key] ?? []) search.append(key, String(value));

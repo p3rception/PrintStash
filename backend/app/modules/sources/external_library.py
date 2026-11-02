@@ -36,6 +36,7 @@ from app.core.time import ensure_utc, utcnow
 from app.db.models import (
     SUFFIX_TO_FILE_TYPE,
     Collection,
+    Document,
     ExternalLibrary,
     ExternalLibraryCheckpoint,
     ExternalLibraryCollectionMode,
@@ -47,6 +48,7 @@ from app.db.models import (
     JobKind,
     LibrarySourceKind,
     Model,
+    MultipartModel,
 )
 from app.db.projections import content_changed
 from app.db.scopes import live
@@ -557,6 +559,59 @@ def _remove_external_file(session: Session, file_row: File) -> None:
             session.add(model)
             content_changed(session, "model", [model.id])
             session.commit()
+
+
+def _follow_moved_file(session: Session, file_row: File) -> None:
+    """Refile a Model whose files all left the folder it was mirrored from.
+
+    A scan reads a moved file as a new path plus a missing one and the hash
+    keeps both on one Model, which would otherwise stay in the old folder. A
+    Model filed elsewhere by hand no longer matches the path, so it stays put.
+    """
+    model = session.get(Model, file_row.model_id)
+    if model is None or model.deleted_at is not None or model.collection_id is None:
+        return
+    home = session.get(Collection, model.collection_id)
+    left = Path(file_row.source_key or "").parent
+    if home is None or home.path != "/".join(map(slugify, left.parts)):
+        return
+    keys = session.exec(
+        select(File.source_key).where(File.model_id == model.id, live(File))
+    ).all()
+    folders = {Path(key).parent.as_posix() for key in keys if key}
+    if len(folders) != 1 or left.as_posix() in folders:
+        return
+    target = taxonomy.resolve_or_create_mirrored_collection(session, folders.pop())
+    model.collection_id = target.id if target else None
+    session.add(model)
+    content_changed(session, "model", [model.id])
+    session.commit()
+    _prune_emptied_folders(session, home)
+
+
+def _prune_emptied_folders(session: Session, collection: Collection | None) -> None:
+    """Retire a folder its last Model just left, and parents emptied with it."""
+    while collection is not None:
+        held = (
+            select(Model.id).where(Model.collection_id == collection.id, live(Model)),
+            select(Collection.id).where(
+                Collection.parent_id == collection.id, live(Collection)
+            ),
+            select(MultipartModel.id).where(
+                MultipartModel.collection_id == collection.id, live(MultipartModel)
+            ),
+            select(Document.id).where(
+                Document.collection_id == collection.id, live(Document)
+            ),
+        )
+        if any(session.exec(stmt).first() is not None for stmt in held):
+            return
+        collection.deleted_at = utcnow()
+        session.add(collection)
+        content_changed(session, "collection", [collection.id])
+        session.commit()
+        parent_id = collection.parent_id
+        collection = session.get(Collection, parent_id) if parent_id else None
 
 
 def _finish(
@@ -1316,6 +1371,8 @@ def scan_library(
                 if path not in disk:
                     _remove_external_file(session, file_row)
                     summary.removed += 1
+                    if library.collection_mode == ExternalLibraryCollectionMode.MIRROR:
+                        _follow_moved_file(session, file_row)
 
             # A clean run is OK; a run that completed but had per-file failures is
             # PARTIAL so the green status never hides a persistent error.

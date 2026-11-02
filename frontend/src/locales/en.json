@@ -2298,6 +2298,7 @@
   "imported": "imported",
   "already exists": "already exists",
   "Rev {value1}": "Rev {value1}",
+  "for {value1}": "for {value1}",
   "spool · {value1}": "spool · {value1}",
   "spool · ": "spool · ",
   " Recommended Print": " Recommended Print",

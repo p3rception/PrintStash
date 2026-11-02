@@ -95,7 +95,7 @@ def _apply_structured_filters(stmt, filters: ModelFilters):
         .where(PrintJob.model_id == Model.id, *print_job_predicates(filters))
         .exists()
     )
-    has_history = bool(filters.print_outcome) or any(
+    has_history = bool(filters.print_outcome or filters.recipient) or any(
         value is not None
         for value in (
             filters.printed_after,
@@ -123,6 +123,8 @@ def print_job_predicates(filters: ModelFilters):
     predicates = [live(PrintJob)]
     if filters.print_outcome:
         predicates.append(PrintJob.state.in_(filters.print_outcome))
+    if filters.recipient:
+        predicates.append(PrintJob.recipient.in_(filters.recipient))
     if filters.printed_after is not None:
         predicates.append(PrintJob.finished_at >= filters.printed_after)
     if filters.printed_before is not None:

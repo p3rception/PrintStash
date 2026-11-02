@@ -197,6 +197,8 @@ export interface ModelPrintJobRead {
   filament_cost: number | null;
   spool_id: number | null;
   spool_name: string | null;
+  recipient?: string | null;
+  notes?: string | null;
   started_at: string | null;
   finished_at: string | null;
   created_at: string;
@@ -858,6 +860,7 @@ export interface ListModelsParams {
   has_similar_candidates?: boolean;
   printed?: boolean;
   print_outcome?: PrintJobState[];
+  recipient?: string[];
   storage?: ("vault" | "external")[];
   uploaded_after?: string;
   uploaded_before?: string;
@@ -926,6 +929,7 @@ export interface SavedViewFilters {
   has_similar_candidates?: boolean | null;
   printed?: boolean | null;
   print_outcome?: PrintJobState[];
+  recipient?: string[];
   storage?: ("vault" | "external")[];
   uploaded_after?: string | null;
   uploaded_before?: string | null;
@@ -960,6 +964,7 @@ export interface ModelFacetsRead {
   printer_model: FacetValueRead[];
   revision_status: FacetValueRead[];
   print_outcome: FacetValueRead[];
+  recipient?: FacetValueRead[];
   storage: FacetValueRead[];
   printed: FacetValueRead[];
 }
@@ -1011,6 +1016,8 @@ export interface CollectionNodeRead extends CollectionRead {
   descendant_count: number;
   /** Names of the visible ancestors and this collection, e.g. `Parts/Brackets`. */
   display_path: string;
+  /** Newest date a model was added anywhere below; null for an empty subtree. */
+  latest_model_at?: string | null;
 }
 
 export interface CollectionPage {

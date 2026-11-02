@@ -26,6 +26,7 @@ type FacetFilterKey =
   | "printer_model"
   | "revision_status"
   | "print_outcome"
+  | "recipient"
   | "storage"
   | "printed";
 
@@ -39,6 +40,7 @@ const GROUPS: FacetFilterKey[] = [
   "revision_status",
   "printed",
   "print_outcome",
+  "recipient",
   "storage",
 ];
 

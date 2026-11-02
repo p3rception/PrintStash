@@ -2298,6 +2298,7 @@
   "imported": "importado",
   "already exists": "ya existe",
   "Rev {value1}": "Rev {value1}",
+  "for {value1}": "para {value1}",
   "spool · {value1}": "carrete · {value1}",
   "spool · ": "carrete · ",
   " Recommended Print": " Impresión recomendada",

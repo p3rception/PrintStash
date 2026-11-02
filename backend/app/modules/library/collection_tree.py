@@ -18,6 +18,7 @@ import base64
 import binascii
 import json
 from dataclasses import dataclass
+from datetime import datetime
 from functools import lru_cache
 from typing import Any, Iterable, Sequence
 
@@ -120,6 +121,7 @@ def _prefixes(path: str) -> list[str]:
 class SubtreeCounts:
     models: int
     collections: int
+    latest_model_at: datetime | None = None
 
 
 @lru_cache(maxsize=1)
@@ -138,7 +140,11 @@ def _subtree_counts_template():
     )
     page, below = aliased(Collection), aliased(Collection)
     direct = (
-        sa_select(Model.collection_id, func.count(Model.id).label("models"))
+        sa_select(
+            Model.collection_id,
+            func.count(Model.id).label("models"),
+            func.max(Model.created_at).label("latest"),
+        )
         .where(live(Model))
         .group_by(Model.collection_id)
         .subquery()
@@ -148,6 +154,7 @@ def _subtree_counts_template():
             page.path,
             func.coalesce(func.sum(direct.c.models), 0),
             func.count(below.id) - 1,
+            func.max(direct.c.latest),
         )
         .select_from(descendants)
         .join(page, page.id == descendants.c.root_id)
@@ -167,8 +174,10 @@ def _subtree_counts(
         return {}
     statement, below = _subtree_counts_template()
     counts = {
-        path: SubtreeCounts(models=int(models), collections=int(collections))
-        for path, models, collections in session.execute(
+        path: SubtreeCounts(
+            models=int(models), collections=int(collections), latest_model_at=latest
+        )
+        for path, models, collections, latest in session.execute(
             statement.where(below.id.in_(visible)),
             {"count_root_ids": [row.id for row in rows]},
         ).all()
@@ -278,27 +287,34 @@ def collection_labels(
 
 
 def collection_covers(session: Session, ids: Sequence[int]) -> dict[int, str]:
-    """One thumbnail per collection: its main file, else its newest model."""
+    """One thumbnail per collection: its main file, else its newest model.
+
+    A folder holding only subfolders shows the newest model below it.
+    """
     if not ids:
         return {}
+    owner, below = aliased(Collection), aliased(Collection)
+    direct = below.id == owner.id
     rows = session.exec(
-        select(Model, File.original_filename)
+        select(owner.id, direct, Model, File.original_filename)
+        .join(below, or_(direct, below.path.startswith(owner.path + "/")))
+        .join(Model, Model.collection_id == below.id)
         .join(File, File.id == Model.thumbnail_file_id)  # type: ignore[arg-type]
         .where(
-            Model.collection_id.in_(ids),  # type: ignore[union-attr]
+            owner.id.in_(ids),  # type: ignore[union-attr]
             Model.thumbnail_file_id.is_not(None),  # type: ignore[union-attr]
             live(Model),
+            live(below),
         )
-        .order_by(Model.id.desc())  # type: ignore[union-attr]
+        .order_by(direct.desc(), Model.id.desc())  # type: ignore[union-attr]
     ).all()
     covers: dict[int, str] = {}
     sliced: set[int] = set()
-    for model, filename in rows:
-        collection_id = model.collection_id
+    for collection_id, is_direct, model, filename in rows:
         url = thumb_url(model)
-        if collection_id is None or url is None or collection_id in sliced:
+        if url is None or collection_id in sliced:
             continue
-        if is_main_file(filename):
+        if is_direct and is_main_file(filename):
             covers[collection_id] = url
             sliced.add(collection_id)
         else:
@@ -338,6 +354,7 @@ def _nodes(
             descendant_count=subtrees[row.path].collections,
             display_path=display[row.path],
             cover_url=covers.get(row.id),
+            latest_model_at=subtrees[row.path].latest_model_at,
         )
         for row in rows
     ]

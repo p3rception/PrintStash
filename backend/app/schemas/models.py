@@ -353,6 +353,7 @@ class ModelFilters(BaseModel):
     revision_status: list[FileRevisionStatus] = Field(default_factory=list)
     printed: Optional[bool] = None
     print_outcome: list[PrintJobState] = Field(default_factory=list)
+    recipient: list[str] = Field(default_factory=list, max_length=64)
     storage: list[Literal["vault", "external"]] = Field(default_factory=list)
     uploaded_after: Optional[datetime] = None
     uploaded_before: Optional[datetime] = None
@@ -411,6 +412,7 @@ class ModelFacetsRead(BaseModel):
     printer_model: list[FacetValueRead] = []
     revision_status: list[FacetValueRead] = []
     print_outcome: list[FacetValueRead] = []
+    recipient: list[FacetValueRead] = []
     storage: list[FacetValueRead] = []
     printed: list[FacetValueRead] = []
 
@@ -668,6 +670,8 @@ class CollectionNodeRead(CollectionRead):
     # Every collection below this one, at any depth.
     descendant_count: int
     display_path: str
+    # Newest date a model was added anywhere below; None for an empty subtree.
+    latest_model_at: Optional[datetime] = None
 
 
 class CollectionPage(BaseModel):

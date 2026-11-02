@@ -35,6 +35,7 @@ DISJUNCTIVE_FACETS = (
     "printer_model",
     "revision_status",
     "print_outcome",
+    "recipient",
     "storage",
     "printed",
 )
@@ -95,7 +96,7 @@ def _facets(session: Session, user: User, filters: ModelFilters) -> ModelFacetsR
         .cte("facet_metadata")
     )
     jobs = (
-        select(PrintJob.model_id, PrintJob.state)
+        select(PrintJob.model_id, PrintJob.state, PrintJob.recipient)
         .join(filtered, filtered.c.id == PrintJob.model_id)
         .where(*print_job_predicates(filters))
         .cte("facet_jobs")
@@ -132,6 +133,7 @@ def _facets(session: Session, user: User, filters: ModelFilters) -> ModelFacetsR
                 ),
             ),
         ),
+        grouped_branch("recipient", jobs.c.recipient, jobs.c.model_id),
         grouped_branch(
             "storage",
             case((files.c.is_external.is_(True), "external"), else_="vault"),
@@ -184,6 +186,7 @@ def _facets(session: Session, user: User, filters: ModelFilters) -> ModelFacetsR
         printer_model=values["printer_model"],
         revision_status=values["revision_status"],
         print_outcome=values["print_outcome"],
+        recipient=values["recipient"],
         storage=values["storage"],
         printed=values["printed"],
     )

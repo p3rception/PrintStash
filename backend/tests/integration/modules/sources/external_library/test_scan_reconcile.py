@@ -27,6 +27,7 @@ import pytest
 from sqlmodel import Session, select
 
 from app.db.models import (
+    Collection,
     File,
     Model,
 )
@@ -191,6 +192,12 @@ class TestScanLibrary:
         live_files = external_files(db_session)
         assert len(live_files) == 1
         assert live_files[0].path == str(new_dir / "widget.gcode")
+        model = db_session.get(Model, live_files[0].model_id)
+        assert model.collection_rel.path == "sorted"
+        emptied = db_session.exec(
+            select(Collection).where(Collection.path == "incoming")
+        ).one()
+        assert emptied.deleted_at is not None
 
     def test_a_removed_file_trashes_the_model_it_was_alone_in(
         self, tmp_path: Path, db_session: Session
