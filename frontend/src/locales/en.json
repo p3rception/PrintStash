@@ -4649,5 +4649,12 @@
   "Filter by person": "Filter by person",
   "For": "For",
   "Who is it for?": "Who is it for?",
-  "Main": "Main"
+  "Main": "Main",
+  "nav.printLog": "Print log",
+  "Print log": "Print log",
+  "Every print, newest first": "Every print, newest first",
+  "Everyone": "Everyone",
+  "This month": "This month",
+  "Price per kg": "Price per kg",
+  "No prints yet": "No prints yet"
 }

@@ -81,17 +81,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                           ? "nav.printer"
                           : pathname.startsWith("/printers")
                             ? "nav.printers"
-                            : pathname.startsWith("/statistics")
-                              ? "nav.statistics"
-                              : pathname.startsWith("/settings")
-                                ? "nav.settings"
-                                : pathname.startsWith("/profiles")
-                                  ? "nav.profiles"
-                                  : pathname.startsWith("/login")
-                                    ? "nav.signIn"
-                                    : pathname.startsWith("/setup")
-                                      ? "nav.setup"
-                                      : null;
+                            : pathname.startsWith("/prints")
+                              ? "nav.printLog"
+                              : pathname.startsWith("/statistics")
+                                ? "nav.statistics"
+                                : pathname.startsWith("/settings")
+                                  ? "nav.settings"
+                                  : pathname.startsWith("/profiles")
+                                    ? "nav.profiles"
+                                    : pathname.startsWith("/login")
+                                      ? "nav.signIn"
+                                      : pathname.startsWith("/setup")
+                                        ? "nav.setup"
+                                        : null;
     document.title = titleKey ? `${t(titleKey)} · PrintStash` : "PrintStash";
   }, [pathname, t]);
 

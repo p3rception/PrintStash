@@ -2046,7 +2046,7 @@ function jobFileLabel(job: PrintJobRead, provider: PrinterRead["provider"]): str
 }
 
 /** Who a logged print was for, plus its notes, edited in place. */
-function JobPersonCell({
+export function JobPersonCell({
   job,
   printerId,
   people,

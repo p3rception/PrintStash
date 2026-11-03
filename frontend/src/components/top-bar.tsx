@@ -14,6 +14,7 @@ import {
   Inbox,
   LogOut,
   Printer,
+  ScrollText,
   Settings,
   SlidersHorizontal,
 } from "lucide-react";
@@ -236,6 +237,7 @@ function WorkspaceMenu({
     { href: "/", label: t("nav.vault"), icon: Box },
     { href: "/inbox", label: t("nav.inbox"), icon: Inbox },
     { href: "/printers", label: t("nav.printers"), icon: Printer, adminOnly: true },
+    { href: "/prints", label: t("nav.printLog"), icon: ScrollText, adminOnly: true },
     { href: "/statistics", label: t("nav.statistics"), icon: BarChart3, adminOnly: true },
     { href: "/profiles", label: t("nav.profiles"), icon: SlidersHorizontal },
     { href: "/settings", label: t("nav.settings"), icon: Settings },

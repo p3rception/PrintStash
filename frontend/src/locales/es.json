@@ -4649,5 +4649,12 @@
   "Filter by person": "Filtrar por persona",
   "For": "Para",
   "Who is it for?": "¿Para quién es?",
-  "Main": "Principal"
+  "Main": "Principal",
+  "nav.printLog": "Registro de impresiones",
+  "Print log": "Registro de impresiones",
+  "Every print, newest first": "Cada impresión, la más reciente primero",
+  "Everyone": "Todos",
+  "This month": "Este mes",
+  "Price per kg": "Precio por kg",
+  "No prints yet": "Aún no hay impresiones"
 }

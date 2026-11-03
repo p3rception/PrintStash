@@ -25,6 +25,7 @@ const GettingStartedPage = lazyImport(() => import("@/pages/getting-started"));
 const SetupPage = lazyImport(() => import("@/pages/setup"));
 const ProfilesPage = lazyImport(() => import("@/pages/profiles"));
 const StatisticsPage = lazyImport(() => import("@/pages/statistics"));
+const PrintLogPage = lazyImport(() => import("@/pages/print-log"));
 const SettingsPage = lazyImport(() => import("@/pages/settings"));
 const InboxPage = lazyImport(() => import("@/pages/inbox"));
 const InboxDetailPage = lazyImport(() => import("@/pages/inbox-detail"));
@@ -146,6 +147,14 @@ export const router = createBrowserRouter([
         element: (
           <RouteChunk>
             <ProfilesPage />
+          </RouteChunk>
+        ),
+      },
+      {
+        path: "prints",
+        element: (
+          <RouteChunk>
+            <PrintLogPage />
           </RouteChunk>
         ),
       },
