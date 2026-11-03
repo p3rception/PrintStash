@@ -1333,6 +1333,13 @@ def scan_library(
                     if source_key in tombstones and existing is None:
                         summary.skipped += 1
                         continue
+                    # A new empty file is still being written (Orca and SMB
+                    # create it first). Every empty file has the same hash, so
+                    # indexing one filed later saves under its Model; the next
+                    # change event scans it again once it has bytes.
+                    if existing is None and size == 0:
+                        summary.skipped += 1
+                        continue
                     entry = pinned_snapshot.files.get(path)
                     if entry is None:
                         raise ExternalRootBindingError(

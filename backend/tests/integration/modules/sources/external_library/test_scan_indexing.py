@@ -45,6 +45,27 @@ from tests.integration.modules.sources.external_library._helpers import (
 
 
 class TestScanLibrary:
+    def test_files_caught_empty_mid_save_get_their_own_models(
+        self, tmp_path: Path, db_session: Session
+    ) -> None:
+        use_local_storage(tmp_path)
+        enable_feature(db_session)
+        nas = tmp_path / "nas"
+        (nas / "a").mkdir(parents=True)
+        (nas / "b").mkdir(parents=True)
+        (nas / "a" / "first.gcode").write_bytes(b"")
+        lib = build_external_library(db_session, nas, name="nas")
+        external_library.scan_library(lib.id)
+        assert external_files(db_session) == []
+        drop_gcode(nas / "a", "first.gcode", marker="first")
+        (nas / "b" / "second.gcode").write_bytes(b"")
+        external_library.scan_library(lib.id)
+        drop_gcode(nas / "b", "second.gcode", marker="second")
+        external_library.scan_library(lib.id)
+        rows = external_files(db_session)
+        assert len(rows) == 2
+        assert len({row.model_id for row in rows}) == 2
+
     def test_rescan_repairs_a_previously_merged_folder(
         self, tmp_path: Path, db_session: Session
     ) -> None:
