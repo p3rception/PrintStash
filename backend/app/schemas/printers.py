@@ -431,14 +431,23 @@ class PrintJobRead(BaseModel):
 
 
 class PrintJobAnnotation(BaseModel):
-    """Who a logged print was for and free notes; omitted fields are kept."""
+    """Corrections to a logged print; omitted fields are kept.
+
+    Everything but recipient and notes applies to a finished print only, and
+    none of it is sent to the printer or to Spoolman."""
 
     model_config = ConfigDict(extra="forbid")
 
     recipient: Optional[str] = Field(default=None, max_length=64)
     notes: Optional[str] = Field(default=None, max_length=4096)
+    spool_name: Optional[str] = Field(default=None, max_length=64)
+    filament_used_g: Optional[float] = Field(default=None, ge=0, le=100_000)
+    actual_duration_s: Optional[int] = Field(default=None, ge=0, le=60 * 60 * 24 * 30)
+    finished_at: Optional[datetime] = None
+    state: Optional[Literal["completed", "failed", "cancelled"]] = None
+    model_id: Optional[int] = Field(default=None, ge=1)
 
-    @field_validator("recipient", "notes")
+    @field_validator("recipient", "notes", "spool_name")
     @classmethod
     def _blank_to_none(cls, v: Optional[str]) -> Optional[str]:
         if v is None:

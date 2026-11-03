@@ -216,10 +216,22 @@ export function listPrinterJobs(
   return getJson<PrintJobRead[]>(`/api/v1/printers/${id}/jobs?limit=${limit}`, options);
 }
 
+/** Fields of a logged print that can be corrected; omitted ones are kept. */
+export type PrintJobCorrection = {
+  recipient?: string;
+  notes?: string;
+  spool_name?: string;
+  filament_used_g?: number | null;
+  actual_duration_s?: number | null;
+  finished_at?: string;
+  state?: "completed" | "failed" | "cancelled";
+  model_id?: number;
+};
+
 export function annotatePrinterJob(
   printerId: number,
   jobId: number,
-  payload: { recipient?: string; notes?: string },
+  payload: PrintJobCorrection,
 ): Promise<PrintJobRead> {
   return sendJson<PrintJobRead>(`/api/v1/printers/${printerId}/jobs/${jobId}`, "PATCH", payload);
 }

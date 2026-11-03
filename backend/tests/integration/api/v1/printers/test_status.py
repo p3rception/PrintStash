@@ -151,6 +151,32 @@ class TestPrinterJobs:
         )
         assert names.json() == ["ntina"]
 
+        # A finished print's recorded numbers can be corrected; a running one's cannot.
+        resp = client.patch(
+            f"{url}/{jobs[0].id}",
+            json={
+                "spool_name": "blue",
+                "filament_used_g": 12.5,
+                "actual_duration_s": 600,
+                "state": "failed",
+                "finished_at": "2026-11-03T10:00:00+02:00",
+                "model_id": m.id,
+            },
+            headers=auth_headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert (body["spool_name"], body["filament_used_g"], body["state"]) == ("blue", 12.5, "failed")
+        assert body["finished_at"].startswith("2026-11-03T08:00:00")
+        assert (body["model_id"], body["file_id"]) == (m.id, f.id)
+        running = build_print_job(
+            db_session, f, printer_id=p.id, remote_filename="x.gcode", state=PrintJobState.PRINTING
+        )
+        resp = client.patch(
+            f"{url}/{running.id}", json={"filament_used_g": 1}, headers=auth_headers
+        )
+        assert resp.status_code == 409
+
         other = build_printer(db_session, name="Other", moonraker_url="http://10.0.0.2")
         resp = client.patch(
             f"/api/v1/printers/{other.id}/jobs/{jobs[1].id}",

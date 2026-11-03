@@ -15,6 +15,7 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
 )
+from printstash_core.files import is_main_file
 from printstash_core.printers import ProviderError, ProviderRegistry
 from sqlmodel import Session, select
 
@@ -23,7 +24,7 @@ from app.bootstrap.dependencies import get_hub, get_hub_from_ws
 from app.core.http import get_or_404
 from app.core.logging import get_logger
 from app.core.security import require_superuser, require_user
-from app.core.time import utcnow
+from app.core.time import ensure_utc, utcnow
 from app.db.models import (
     CollectionRole,
     File,
@@ -1355,10 +1356,28 @@ def list_job_recipients(
     )
 
 
+_FINISHED_STATES = {PrintJobState.COMPLETED, PrintJobState.FAILED, PrintJobState.CANCELLED}
+
+
+def _print_file_of(session: Session, model_id: int) -> int:
+    """The file a print of this Model is linked to: its main `_AD5X` file, else the newest."""
+    model = session.get(Model, model_id)
+    if model is None or model.deleted_at is not None:
+        raise HTTPException(status_code=404, detail="model_not_found")
+    files = session.exec(
+        select(File).where(File.model_id == model_id, live(File)).order_by(File.id.desc())
+    ).all()
+    if not files:
+        raise HTTPException(status_code=404, detail="model_has_no_files")
+    main = next((f for f in files if is_main_file(f.original_filename or "")), files[0])
+    assert main.id is not None
+    return main.id
+
+
 @router.patch(
     "/{printer_id}/jobs/{job_id}",
     response_model=PrintJobRead,
-    summary="Set who a logged print was for and its notes",
+    summary="Correct a logged print: who it was for, notes and its recorded numbers",
 )
 def annotate_job(
     printer_id: int,
@@ -1379,8 +1398,19 @@ def annotate_job(
     ).first()
     if job is None:
         raise HTTPException(status_code=404, detail="print_job_not_found")
-    for field in payload.model_fields_set:
+    special = {"state", "finished_at", "model_id"}
+    if payload.model_fields_set - {"recipient", "notes"} and job.state not in _FINISHED_STATES:
+        # The provider still owns a running print's numbers.
+        raise HTTPException(status_code=409, detail="print_job_not_finished")
+    for field in payload.model_fields_set - special:
         setattr(job, field, getattr(payload, field))
+    if payload.state is not None:
+        job.state = PrintJobState(payload.state)
+    if payload.finished_at is not None:
+        job.finished_at = ensure_utc(payload.finished_at)
+    if payload.model_id is not None:
+        job.file_id = _print_file_of(session, payload.model_id)
+        job.model_id = payload.model_id
     job.updated_by = current_user.id
     job.updated_at = utcnow()
     session.add(job)

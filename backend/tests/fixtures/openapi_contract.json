@@ -3819,6 +3819,18 @@
             "title": "Id",
             "type": "integer"
           },
+          "latest_model_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Model At"
+          },
           "model_count": {
             "default": 0,
             "title": "Model Count",
@@ -10746,6 +10758,14 @@
             "title": "Printer Model",
             "type": "array"
           },
+          "recipient": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/FacetValueRead"
+            },
+            "title": "Recipient",
+            "type": "array"
+          },
           "revision_status": {
             "default": [],
             "items": {
@@ -10944,6 +10964,14 @@
               }
             ],
             "title": "Q"
+          },
+          "recipient": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 64,
+            "title": "Recipient",
+            "type": "array"
           },
           "revision_status": {
             "items": {
@@ -13484,6 +13512,18 @@
             "title": "Id",
             "type": "integer"
           },
+          "latest_model_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Model At"
+          },
           "model_count": {
             "default": 0,
             "title": "Model Count",
@@ -14161,6 +14201,14 @@
             ],
             "title": "Q"
           },
+          "recipient": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 64,
+            "title": "Recipient",
+            "type": "array"
+          },
           "reveal_id": {
             "anyOf": [
               {
@@ -14568,8 +14616,58 @@
       },
       "PrintJobAnnotation": {
         "additionalProperties": false,
-        "description": "Who a logged print was for and free notes; omitted fields are kept.",
+        "description": "Corrections to a logged print; omitted fields are kept.\n\nEverything but recipient and notes applies to a finished print only, and\nnone of it is sent to the printer or to Spoolman.",
         "properties": {
+          "actual_duration_s": {
+            "anyOf": [
+              {
+                "maximum": 2592000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Duration S"
+          },
+          "filament_used_g": {
+            "anyOf": [
+              {
+                "maximum": 100000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filament Used G"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
           "notes": {
             "anyOf": [
               {
@@ -14593,6 +14691,34 @@
               }
             ],
             "title": "Recipient"
+          },
+          "spool_name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spool Name"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "enum": [
+                  "completed",
+                  "failed",
+                  "cancelled"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
           }
         },
         "title": "PrintJobAnnotation",
@@ -18141,6 +18267,14 @@
               }
             ],
             "title": "Q"
+          },
+          "recipient": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 64,
+            "title": "Recipient",
+            "type": "array"
           },
           "revision_status": {
             "items": {
@@ -33245,6 +33379,25 @@
           },
           {
             "in": "query",
+            "name": "recipient",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Recipient"
+            }
+          },
+          {
+            "in": "query",
             "name": "storage",
             "required": false,
             "schema": {
@@ -33871,6 +34024,19 @@
           },
           {
             "in": "query",
+            "name": "recipient",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 64,
+              "title": "Recipient",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
             "name": "storage",
             "required": false,
             "schema": {
@@ -34469,6 +34635,25 @@
           },
           {
             "in": "query",
+            "name": "recipient",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Recipient"
+            }
+          },
+          {
+            "in": "query",
             "name": "storage",
             "required": false,
             "schema": {
@@ -34939,6 +35124,25 @@
           },
           {
             "in": "query",
+            "name": "recipient",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Recipient"
+            }
+          },
+          {
+            "in": "query",
             "name": "storage",
             "required": false,
             "schema": {
@@ -35369,6 +35573,25 @@
                 }
               ],
               "title": "Print Outcome"
+            }
+          },
+          {
+            "in": "query",
+            "name": "recipient",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Recipient"
             }
           },
           {
@@ -39882,6 +40105,19 @@
           },
           {
             "in": "query",
+            "name": "recipient",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 64,
+              "title": "Recipient",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
             "name": "storage",
             "required": false,
             "schema": {
@@ -40343,6 +40579,19 @@
                 "$ref": "#/components/schemas/PrintJobState"
               },
               "title": "Print Outcome",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "recipient",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 64,
+              "title": "Recipient",
               "type": "array"
             }
           },
@@ -40855,6 +41104,19 @@
                 "$ref": "#/components/schemas/PrintJobState"
               },
               "title": "Print Outcome",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "recipient",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 64,
+              "title": "Recipient",
               "type": "array"
             }
           },
@@ -42243,7 +42505,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Set who a logged print was for and its notes",
+        "summary": "Correct a logged print: who it was for, notes and its recorded numbers",
         "tags": [
           "printers"
         ]
