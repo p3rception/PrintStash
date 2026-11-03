@@ -47,6 +47,19 @@ def test_completed_reports_complete_with_slicer_grams() -> None:
     assert stats[1]["print_duration"] == 3387
 
 
+def test_warm_up_with_the_previous_name_opens_no_job() -> None:
+    nxt = "Gum_Bottle_AD5X_PLA_2h15m.gcode.3mf"
+    stats = run(
+        detail("printing", printProgress=0.5),
+        detail("completed", printProgress=1.0),
+        detail("ready", printFileName=""),
+        detail("heating"),
+        detail("printing", printFileName=nxt, printProgress=0.01),
+    )
+    assert "filename" not in stats[3]
+    assert stats[4]["filename"] == nxt
+
+
 def test_cancel_through_canceling_then_ready() -> None:
     stats = run(
         detail("printing", printProgress=0.25, estimatedRightWeight=20.0),

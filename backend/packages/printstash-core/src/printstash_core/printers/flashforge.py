@@ -102,7 +102,10 @@ class FlashforgeJobTracker:
         job = self.job
 
         if raw in _RUNNING or raw in _PAUSED:
-            if filename and (job is None or job.filename != filename):
+            # Only `printing` opens a job: the warm-up of the next print still
+            # reports the previous file's name, which logged ghost failed jobs.
+            opens = raw == "printing" and (job is None or job.filename != filename)
+            if filename and opens:
                 job = self.job = _ActiveJob(filename)
             if job is not None:
                 self._record(job, detail)
