@@ -30,12 +30,13 @@ from app.db.models import (
     FileType,
     Metadata,
     Model,
+    PrintJobState,
 )
 from app.db.scopes import live
 from app.modules.library import taxonomy
 from app.modules.sources import external_library
 from tests._env import use_local_storage
-from tests.factories import build_external_library
+from tests.factories import build_external_library, build_print_job
 from tests.integration.modules.sources.external_library._helpers import (
     drop_gcode,
     drop_stl,
@@ -45,6 +46,31 @@ from tests.integration.modules.sources.external_library._helpers import (
 
 
 class TestScanLibrary:
+    def test_moving_an_edited_file_keeps_its_model_and_prints(
+        self, tmp_path: Path, db_session: Session
+    ) -> None:
+        use_local_storage(tmp_path)
+        enable_feature(db_session)
+        nas = tmp_path / "nas"
+        drop_gcode(nas / "clip", "clip.gcode", marker="first")
+        lib = build_external_library(db_session, nas, name="nas")
+        external_library.scan_library(lib.id)
+        # Re-saved after indexing: the Model's hash is now of bytes no file has.
+        drop_gcode(nas / "clip", "clip.gcode", marker="second")
+        external_library.scan_library(lib.id)
+        (old,) = external_files(db_session)
+        job = build_print_job(db_session, old, state=PrintJobState.COMPLETED)
+
+        (nas / "printed").mkdir()
+        (nas / "clip").rename(nas / "printed" / "clip")
+        external_library.scan_library(lib.id)
+
+        (new,) = external_files(db_session)
+        assert new.model_id == old.model_id
+        db_session.refresh(job)
+        assert (job.file_id, job.model_id) == (new.id, old.model_id)
+        assert db_session.get(Model, old.model_id).deleted_at is None
+
     def test_files_caught_empty_mid_save_get_their_own_models(
         self, tmp_path: Path, db_session: Session
     ) -> None:

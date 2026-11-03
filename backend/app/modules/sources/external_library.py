@@ -49,6 +49,7 @@ from app.db.models import (
     LibrarySourceKind,
     Model,
     MultipartModel,
+    PrintJob,
 )
 from app.db.projections import content_changed
 from app.db.scopes import live
@@ -467,13 +468,26 @@ def _index_external_file(
             else session.get(Collection, library.target_collection_id)
         )
 
-    model, created = resolve_or_create_model(
-        session,
-        dedup_hash=blob_hash,
-        model_name=tidy_name(source_path.stem),
-        actor=None,
-        collection=home,
-    )
+    # A moved file is indexed while its old row is still live. A Model's hash
+    # is of its first bytes, so a file edited since then matches only by its
+    # own row; without this it would land on a new Model and its print history
+    # would stay on the old one, trashed once the old path is removed.
+    twin = session.exec(
+        select(File.model_id)
+        .join(Model, col(Model.id) == File.model_id)
+        .where(File.sha256 == blob_hash, live(File), live(Model))
+    ).first()
+    twin_model = session.get(Model, twin) if twin is not None else None
+    if twin_model is not None:
+        model, created = twin_model, False
+    else:
+        model, created = resolve_or_create_model(
+            session,
+            dedup_hash=blob_hash,
+            model_name=tidy_name(source_path.stem),
+            actor=None,
+            collection=home,
+        )
 
     if not created and model.collection_id is None:
         coll = home()
@@ -543,6 +557,18 @@ def _remove_external_file(session: Session, file_row: File) -> None:
     """Soft-delete a file whose on-disk source is gone; trash the model if it
     becomes empty. NAS bytes are never touched (the file is already gone)."""
     now = utcnow()
+    # Prints of a moved file follow it to the new path's row (same bytes).
+    moved_to = session.exec(
+        select(File).where(
+            File.sha256 == file_row.sha256, File.id != file_row.id, live(File)
+        )
+    ).first()
+    if moved_to is not None:
+        session.execute(
+            update(PrintJob)
+            .where(col(PrintJob.file_id) == file_row.id)
+            .values(file_id=moved_to.id, model_id=moved_to.model_id)
+        )
     file_row.deleted_at = now
     session.add(file_row)
     content_changed(session, "model", [file_row.model_id])
